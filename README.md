@@ -39,6 +39,7 @@ Live Demo: [https://react-supabase-realtime-tasks.vercel.app](https://react-supa
      created_at timestamp with time zone default timezone('utc' :: text, now()) not null
    );
    ```
+   
 3. เปิด RLS และเพิ่ม Policy สำหรับการเข้าถึงของผู้ใช้ที่ลงชื่อเข้าใช้:
    ```sql
    alter table public.tasks enable row level security;
@@ -50,15 +51,12 @@ Live Demo: [https://react-supabase-realtime-tasks.vercel.app](https://react-supa
      on public.tasks for insert with check (auth.uid() is not null);
 
   create policy "Enable update access for owners"
-     on public.tasks for update using (
-       email = auth.jwt() ->> 'email'
-     );
+     on public.tasks for update using (email = auth.jwt() ->> 'email');
 
   create policy "Enable delete access for owners"
-     on public.tasks for delete using (
-       email = auth.jwt() ->> 'email'
-     );
+     on public.tasks for delete using (email = auth.jwt() ->> 'email');
    ```
+
 4. ตั้งค่าตัวแปรแวดล้อม `VITE_SUPABASE_URL` และ `VITE_SUPABASE_KEY` เป็นค่า anon key (Public)
 
 ## Environment Variables
