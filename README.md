@@ -1,4 +1,4 @@
-# Task Manager Realtime CRUD (React + Supabase)
+# Task Manager with Realtime CRUD (React + Supabase)
 
 เว็บแอปจัดการงานที่สร้างด้วย React, TypeScript และ Supabase เพื่อให้ผู้ใช้สร้าง แก้ไข และลบงานได้แบบเรียลไทม์ พร้อมระบบยืนยันตัวตนและการปรับธีม
 
