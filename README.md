@@ -3,7 +3,7 @@
 เว็บแอปจัดการงานที่สร้างด้วย React, TypeScript และ Supabase เพื่อให้ผู้ใช้สร้าง แก้ไข และลบงานได้แบบเรียลไทม์ พร้อมระบบยืนยันตัวตนและการปรับธีม
 
 ![Task Manager Screenshot](./public/preview.png)
-[(Live Demo) https://react-supabase-realtime-tasks.vercel.app](https://react-supabase-realtime-tasks.vercel.app/)
+(Live Demo) [https://react-supabase-realtime-tasks.vercel.app](https://react-supabase-realtime-tasks.vercel.app/)
 
 ## Feature
 - จัดการงานครบวงจร: เพิ่ม แก้ไข (ผ่าน dialog) และลบงาน พร้อมตรวจสอบข้อมูลด้วย Zod
