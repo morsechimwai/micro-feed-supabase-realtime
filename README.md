@@ -38,3 +38,5 @@
 - `react-hook-form`, `@hookform/resolvers`, `zod` : จัดการฟอร์มและ validate ข้อมูล
 - `dayjs` และปลั๊กอิน `relativeTime` : จัดรูปแบบเวลาและข้อความแบบ human-readable
 - `lucide-react`, `tailwindcss` : ชุดไอคอนและระบบสไตล์
+
+## License [**MIT**](./LICENSE)
