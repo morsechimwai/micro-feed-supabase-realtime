@@ -5,16 +5,38 @@ import { useEffect, useState } from "react";
 import Auth from "./components/Auth";
 import AddTask from "./components/AddTask";
 import TaskList from "./components/TaskList";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "./components/ui/form";
 
 // Types
 import type { ThemeMode } from "./types/theme";
 import type { Task } from "./types/task";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase-client";
+
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "./components/ui/button";
+import { Textarea } from "./components/ui/textarea";
+import { Input } from "./components/ui/input";
+import z from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Spinner } from "./components/ui/spinner";
 
 // Theme Management
 const THEME_STORAGE_KEY = "theme-preference";
+
+const taskSchema = z.object({
+  title: z.string().min(1, "Title is required").max(100, "Title is too long"),
+  description: z.string().max(500, "Description is too long").optional(),
+});
 
 const App = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -23,21 +45,49 @@ const App = () => {
   const [adding, setAdding] = useState(false);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [openEdit, setOpenEdit] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
-  const fetchSession = async () => {
-    const currentSession = await supabase.auth.getSession();
-    if (currentSession.data.session) {
-      console.log("Current session:", currentSession.data.session);
-      setSession(currentSession.data.session);
-    }
-  };
+  const editForm = useForm<z.infer<typeof taskSchema>>({
+    resolver: zodResolver(taskSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+    },
+    mode: "onSubmit",
+    reValidateMode: "onChange",
+  });
 
   useEffect(() => {
-    fetchSession();
+    const loadSession = async () => {
+      const currentSession = await supabase.auth.getSession();
+      const activeSession = currentSession.data.session ?? null;
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth state changed:", event, session);
-      setSession(session);
+      if (activeSession) {
+        console.log("Current session:", activeSession);
+      }
+
+      setSession(activeSession);
+
+      if (!activeSession) {
+        setTasks([]);
+        setEditingTask(null);
+        setOpenEdit(false);
+      }
+    };
+
+    void loadSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, authSession) => {
+      console.log("Auth state changed:", event, authSession);
+      setSession(authSession);
+      if (!authSession) {
+        setTasks([]);
+        setEditingTask(null);
+        setOpenEdit(false);
+      }
     });
 
     return () => {
@@ -45,30 +95,29 @@ const App = () => {
     };
   }, []);
 
-  const fetchTasks = async () => {
-    setFetching(true);
-    try {
-      const { error, data } = await supabase
-        .from("tasks")
-        .select("*")
-        .order("created_at", { ascending: true });
-
-      if (error) {
-        console.error("Error fetching tasks:", error.message);
-        return;
-      }
-
-      setTasks(data || []);
-    } catch (error) {
-      console.error("Unexpected error fetching tasks:", error);
-      return;
-    } finally {
-      setFetching(false);
-    }
-  };
-
   useEffect(() => {
-    fetchTasks();
+    const loadTasks = async () => {
+      setFetching(true);
+      try {
+        const { error, data } = await supabase
+          .from("tasks")
+          .select("*")
+          .order("created_at", { ascending: true });
+
+        if (error) {
+          console.error("Error fetching tasks:", error.message);
+          return;
+        }
+
+        setTasks(data || []);
+      } catch (error) {
+        console.error("Unexpected error fetching tasks:", error);
+      } finally {
+        setFetching(false);
+      }
+    };
+
+    void loadTasks();
   }, []);
 
   useEffect(() => {
@@ -100,6 +149,10 @@ const App = () => {
   }, []);
 
   const handleAddTask = async (task: Pick<Task, "title" | "description">) => {
+    if (!session) {
+      return;
+    }
+
     setAdding(true);
     try {
       const { error } = await supabase
@@ -107,7 +160,7 @@ const App = () => {
         .insert({
           title: task.title,
           description: task.description ?? "",
-          email: session?.user.email,
+          email: session.user.email,
         })
         .select()
         .single();
@@ -118,7 +171,6 @@ const App = () => {
       }
     } catch (error) {
       console.error("Unexpected error adding task:", error);
-      return;
     } finally {
       setAdding(false);
     }
@@ -135,7 +187,6 @@ const App = () => {
       }
     } catch (error) {
       console.error("Unexpected error deleting task:", error);
-      return;
     } finally {
       setDeletingId(null);
     }
@@ -152,10 +203,50 @@ const App = () => {
       }
     } catch (error) {
       console.error("Unexpected error updating task:", error);
-      return;
     } finally {
       setUpdatingId(null);
     }
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    editForm.reset({
+      title: task.title,
+      description: task.description ?? "",
+    });
+    setOpenEdit(true);
+  };
+
+  const handleEditDialogChange = (open: boolean) => {
+    setOpenEdit(open);
+    if (!open) {
+      setEditingTask(null);
+      editForm.reset({
+        title: "",
+        description: "",
+      });
+    }
+  };
+
+  const handleDeleteRequest = (task: Task) => {
+    setTaskToDelete(task);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteDialogChange = (open: boolean) => {
+    setDeleteDialogOpen(open);
+    if (!open) {
+      setTaskToDelete(null);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!taskToDelete) {
+      return;
+    }
+
+    await handleDeleteTask(taskToDelete.id);
+    handleDeleteDialogChange(false);
   };
 
   const [theme, setTheme] = useState<ThemeMode>(() => {
@@ -205,70 +296,179 @@ const App = () => {
     });
   };
 
+  const onUpdate = async (values: z.infer<typeof taskSchema>) => {
+    if (!editingTask) {
+      return;
+    }
+
+    await handleUpdateTask(editingTask.id, {
+      title: values.title,
+      description: values.description ?? "",
+    });
+
+    handleEditDialogChange(false);
+  };
+
   return (
-    <div className="min-h-screen text-foreground transition-colors">
-      <div className="container mx-auto px-4 py-10">
-        <div className="grid gap-6 lg:grid-cols-[1fr_minmax(0,450px)]">
-          <TaskList
-            className="w-full mx-auto max-w-3xl rounded-3xl border bg-card p-6 shadow-lg transition-colors lg:mx-0 lg:max-w-none"
-            tasks={tasks}
-            session={session}
-            fetching={fetching}
-            updatingId={updatingId}
-            deletingId={deletingId}
-            onDeleteTask={handleDeleteTask}
-            onUpdateTask={handleUpdateTask}
-          />
-          <div className="space-y-6 lg:sticky lg:top-10 lg:h-fit lg:max-h-[calc(100vh-5rem)]">
-            {session ? (
-              <AddTask
-                className="w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors mx-auto lg:mx-0 lg:max-w-none"
-                toggleTheme={toggleTheme}
-                theme={theme}
-                adding={adding}
-                onAddTask={handleAddTask}
-              />
-            ) : (
-              <Auth
-                className="w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors mx-auto lg:mx-0 lg:max-w-none"
-                toggleTheme={toggleTheme}
-                theme={theme}
-              />
-            )}
-            <p className="mt-2 text-sm text-muted-foreground">
-              Simple{" "}
-              <a
-                className="font-semibold text-green-500"
-                href="https://supabase.com"
-                rel="noreferrer"
-                target="_blank"
-              >
-                Supabase
-              </a>{" "}
-              based{" "}
-              <a
-                className="font-semibold text-sky-500"
-                href="https://react.dev"
-                rel="noreferrer"
-                target="_blank"
-              >
-                React
-              </a>{" "}
-              CRUD application with Authentication.
-              <Button asChild className="ml-1 inline-flex p-0 align-baseline" variant="link">
+    <>
+      <div className="min-h-screen text-foreground transition-colors">
+        <div className="container mx-auto px-4 py-10">
+          <div className="grid gap-6 lg:grid-cols-[1fr_minmax(0,450px)]">
+            <TaskList
+              className="w-full mx-auto max-w-3xl rounded-3xl border bg-card p-6 shadow-lg transition-colors lg:mx-0 lg:max-w-none"
+              tasks={tasks}
+              session={session}
+              fetching={fetching}
+              updatingId={updatingId}
+              deletingId={deletingId}
+              onDeleteTask={handleDeleteRequest}
+              onEditTask={handleEditTask}
+            />
+            <div className="space-y-6 lg:sticky lg:top-10 lg:h-fit lg:max-h-[calc(100vh-5rem)]">
+              {session ? (
+                <AddTask
+                  className="w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors mx-auto lg:mx-0 lg:max-w-none"
+                  toggleTheme={toggleTheme}
+                  theme={theme}
+                  adding={adding}
+                  onAddTask={handleAddTask}
+                />
+              ) : (
+                <Auth
+                  className="w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors mx-auto lg:mx-0 lg:max-w-none"
+                  toggleTheme={toggleTheme}
+                  theme={theme}
+                />
+              )}
+              <p className="mt-2 text-sm text-muted-foreground">
+                Simple{" "}
                 <a
-                  href="https://github.com/morsechimwai/react-supabase-crud"
+                  className="font-semibold text-green-500"
+                  href="https://supabase.com"
                   rel="noreferrer"
                   target="_blank"
                 >
-                  View on GitHub
-                </a>
-              </Button>
-            </p>
+                  Supabase
+                </a>{" "}
+                based{" "}
+                <a
+                  className="font-semibold text-sky-500"
+                  href="https://react.dev"
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  React
+                </a>{" "}
+                CRUD application with Authentication.
+                <Button asChild className="ml-1 inline-flex p-0 align-baseline" variant="link">
+                  <a
+                    href="https://github.com/morsechimwai/react-supabase-crud"
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    View on GitHub
+                  </a>
+                </Button>
+              </p>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={handleDeleteDialogChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Task</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. Are you sure you want to delete
+              {" "}
+              <span className="font-semibold">
+                {taskToDelete ? `"${taskToDelete.title}"` : "this task"}
+              </span>
+              ?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:justify-between">
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={!taskToDelete || deletingId === taskToDelete.id}
+            >
+              {deletingId === taskToDelete?.id ? (
+                <>
+                  <Spinner className="mr-2" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openEdit} onOpenChange={handleEditDialogChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Task</DialogTitle>
+            <DialogDescription>Update the details of your task.</DialogDescription>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onUpdate)} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="title"
+                render={({ field, fieldState }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input placeholder="Task Title" autoComplete="off" {...field} />
+                    </FormControl>
+                    <FormMessage>{fieldState.error?.message}</FormMessage>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editForm.control}
+                name="description"
+                render={({ field, fieldState }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Textarea placeholder="Task Description (optional)" rows={4} {...field} />
+                    </FormControl>
+                    <FormMessage>{fieldState.error?.message}</FormMessage>
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter className="gap-2 sm:justify-between">
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button type="submit" disabled={!editingTask || updatingId === editingTask.id}>
+                  {updatingId === editingTask?.id ? (
+                    <>
+                      <Spinner className="mr-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

@@ -1,6 +1,5 @@
 // UI Components
 import { Button } from "./ui/button";
-import type { Session } from "@supabase/supabase-js";
 import { Badge } from "./ui/badge";
 import {
   DropdownMenu,
@@ -16,16 +15,20 @@ import { EllipsisVertical, Pencil, Trash2, User2 } from "lucide-react";
 // Types
 import type { Task } from "@/types/task";
 
+// Supabase
+import type { Session } from "@supabase/supabase-js";
+import { formatCreatedAt } from "@/lib/utils";
+
 interface TaskItemProps {
   task: Task;
   session: Session | null;
-  onDelete?: (id: number) => void;
+  onDelete?: (task: Task) => void;
   onEdit?: (task: Task) => void;
   isUpdating?: boolean;
   isDeleting?: boolean;
 }
 
-const TaskItem = ({ task, session, onDelete, onEdit }: TaskItemProps) => {
+const TaskItem = ({ task, session, onDelete, onEdit, isUpdating, isDeleting }: TaskItemProps) => {
   return (
     <>
       <li className="mb-4 flex flex-col gap-4 rounded-2xl border p-4 shadow-sm transition-colors hover:bg-accent hover:shadow-md sm:flex-row sm:items-start sm:justify-between">
@@ -49,8 +52,8 @@ const TaskItem = ({ task, session, onDelete, onEdit }: TaskItemProps) => {
                 )}
               </span>
             </Badge>
-            <span className="ml-2 text-xs text-muted-foreground">
-              {new Date(task.created_at).toLocaleString()}
+            <span className="text-xs text-muted-foreground">
+              {formatCreatedAt(task.created_at)}
             </span>
           </div>
         </div>
@@ -63,12 +66,12 @@ const TaskItem = ({ task, session, onDelete, onEdit }: TaskItemProps) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onEdit?.(task)}>
+                <DropdownMenuItem onClick={() => onEdit?.(task)} disabled={isUpdating}>
                   <Pencil />
                   <span>Edit</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => onDelete?.(task.id)}>
+                <DropdownMenuItem onClick={() => onDelete?.(task)} disabled={isDeleting}>
                   <Trash2 />
                   <span>Delete</span>
                 </DropdownMenuItem>

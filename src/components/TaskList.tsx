@@ -1,6 +1,11 @@
-import TaskItem from "./TaskItem";
+// UI Components
 import { Skeleton } from "@/components/ui/skeleton";
+import TaskItem from "./TaskItem";
+
+// Types
 import type { Task } from "@/types/task";
+
+// Supabase
 import type { Session } from "@supabase/supabase-js";
 
 interface TaskListProps {
@@ -10,8 +15,8 @@ interface TaskListProps {
   fetching: boolean;
   updatingId: number | null;
   deletingId: number | null;
-  onDeleteTask: (id: number) => Promise<void>;
-  onUpdateTask: (id: number, updates: Pick<Task, "title" | "description">) => Promise<void>;
+  onDeleteTask: (task: Task) => void;
+  onEditTask: (task: Task) => void;
 }
 
 const TaskList = ({
@@ -22,18 +27,8 @@ const TaskList = ({
   updatingId,
   deletingId,
   onDeleteTask,
-  onUpdateTask,
+  onEditTask,
 }: TaskListProps) => {
-  const handleEdit = (task: Task) => {
-    const title = window.prompt("Update task title", task.title);
-    if (title === null) return;
-
-    const description = window.prompt("Update task description", task.description);
-    if (description === null) return;
-
-    void onUpdateTask(task.id, { title, description });
-  };
-
   return (
     <>
       <div className={`${className}`}>
@@ -54,8 +49,8 @@ const TaskList = ({
                   key={task.id}
                   task={task}
                   session={session}
-                  onDelete={(id) => void onDeleteTask(id)}
-                  onEdit={handleEdit}
+                  onDelete={() => onDeleteTask(task)}
+                  onEdit={onEditTask}
                   isUpdating={updatingId === task.id}
                   isDeleting={deletingId === task.id}
                 />
