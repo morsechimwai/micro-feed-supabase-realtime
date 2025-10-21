@@ -50,11 +50,11 @@ Live Demo: [https://react-supabase-realtime-tasks.vercel.app](https://react-supa
    create policy "Enable insert access for authenticated users"
      on public.tasks for insert with check (auth.uid() is not null);
 
-  create policy "Enable update access for owners"
-     on public.tasks for update using (email = auth.jwt() ->> 'email');
+    create policy "Enable update access for owners"
+      on public.tasks for update using (email = auth.jwt() ->> 'email');
 
-  create policy "Enable delete access for owners"
-     on public.tasks for delete using (email = auth.jwt() ->> 'email');
+    create policy "Enable delete access for owners"
+      on public.tasks for delete using (email = auth.jwt() ->> 'email');
    ```
 
 4. ตั้งค่าตัวแปรแวดล้อม `VITE_SUPABASE_URL` และ `VITE_SUPABASE_KEY` เป็นค่า anon key (Public)
