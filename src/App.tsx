@@ -72,7 +72,6 @@ const App = () => {
       setSession(activeSession);
 
       if (!activeSession) {
-        setTasks([]);
         setEditingTask(null);
         setOpenEdit(false);
       }
@@ -84,7 +83,6 @@ const App = () => {
       console.log("Auth state changed:", event, authSession);
       setSession(authSession);
       if (!authSession) {
-        setTasks([]);
         setEditingTask(null);
         setOpenEdit(false);
       }
@@ -380,8 +378,7 @@ const App = () => {
           <DialogHeader>
             <DialogTitle>Delete Task</DialogTitle>
             <DialogDescription>
-              This action cannot be undone. Are you sure you want to delete
-              {" "}
+              This action cannot be undone. Are you sure you want to delete{" "}
               <span className="font-semibold">
                 {taskToDelete ? `"${taskToDelete.title}"` : "this task"}
               </span>
