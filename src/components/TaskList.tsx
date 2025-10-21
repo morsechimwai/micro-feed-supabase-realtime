@@ -1,15 +1,29 @@
 import TaskItem from "./TaskItem";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTasks } from "@/hooks/useTasks";
 import type { Task } from "@/types/task";
 
 interface TaskListProps {
   className?: string;
+  tasks: Task[];
+  fetching: boolean;
+  updatingId: number | null;
+  deletingId: number | null;
+  onDeleteTask: (id: number) => Promise<boolean>;
+  onUpdateTask: (
+    id: number,
+    updates: Pick<Task, "title" | "description">
+  ) => Promise<boolean>;
 }
 
-const TaskList = ({ className }: TaskListProps) => {
-  const { tasks, fetching, updatingId, deletingId, deleteTask, updateTask } = useTasks();
-
+const TaskList = ({
+  className,
+  tasks,
+  fetching,
+  updatingId,
+  deletingId,
+  onDeleteTask,
+  onUpdateTask,
+}: TaskListProps) => {
   const handleEdit = (task: Task) => {
     const title = window.prompt("Update task title", task.title);
     if (title === null) return;
@@ -17,7 +31,7 @@ const TaskList = ({ className }: TaskListProps) => {
     const description = window.prompt("Update task description", task.description);
     if (description === null) return;
 
-    void updateTask(task.id, { title, description });
+    void onUpdateTask(task.id, { title, description });
   };
 
   return (
@@ -34,16 +48,18 @@ const TaskList = ({ className }: TaskListProps) => {
           <p className="mt-2 text-sm text-muted-foreground">No tasks available.</p>
         ) : (
           <ul className="mt-2">
-            {tasks.map((task) => (
-              <TaskItem
-                key={task.id}
-                task={task}
-                onDelete={(id) => void deleteTask(id)}
-                onEdit={handleEdit}
-                isUpdating={updatingId === task.id}
-                isDeleting={deletingId === task.id}
-              />
-            ))}
+            {tasks
+              .map((task) => (
+                <TaskItem
+                  key={task.id}
+                  task={task}
+                  onDelete={(id) => void onDeleteTask(id)}
+                  onEdit={handleEdit}
+                  isUpdating={updatingId === task.id}
+                  isDeleting={deletingId === task.id}
+                />
+              ))
+              .reverse()}
           </ul>
         )}
       </div>

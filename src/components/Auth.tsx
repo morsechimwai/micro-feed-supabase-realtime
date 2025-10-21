@@ -17,6 +17,7 @@ interface AuthProps {
 const Auth = ({ className }: AuthProps) => {
   // State to toggle between Sign In and Sign Up
   const [action, setAction] = useState<"signIn" | "signUp">("signIn");
+
   // State to manage submitting state
   const [submitting, setSubmitting] = useState(false);
 
@@ -51,6 +52,8 @@ const Auth = ({ className }: AuthProps) => {
     setSubmitting(true);
 
     // Simulate async operation
+    form.clearErrors("password");
+
     if (action === "signIn") {
       try {
         const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -60,10 +63,18 @@ const Auth = ({ className }: AuthProps) => {
 
         if (signInError) {
           console.error("Error signing in:", signInError.message);
+          form.setError("password", {
+            type: "manual",
+            message: signInError.message ?? "Invalid email or password. Please try again.",
+          });
           return;
         }
       } catch (error) {
         console.error("Error signing in:", error);
+        form.setError("password", {
+          type: "manual",
+          message: "Unexpected error during sign in. Please try again.",
+        });
       } finally {
         setSubmitting(false);
       }
@@ -76,6 +87,10 @@ const Auth = ({ className }: AuthProps) => {
 
         if (signUpError) {
           console.error("Error signing up:", signUpError.message);
+          form.setError("password", {
+            type: "manual",
+            message: signUpError.message ?? "Unable to sign up. Please try again.",
+          });
           return;
         }
 
@@ -87,6 +102,10 @@ const Auth = ({ className }: AuthProps) => {
         }
       } catch (error) {
         console.error("Error signing up:", error);
+        form.setError("password", {
+          type: "manual",
+          message: "Unexpected error during sign up. Please try again.",
+        });
       } finally {
         setSubmitting(false);
       }
