@@ -56,16 +56,16 @@ const Auth = ({ className }: AuthProps) => {
 
     if (action === "signIn") {
       try {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+        const { error } = await supabase.auth.signInWithPassword({
           email: values.email,
           password: values.password,
         });
 
-        if (signInError) {
-          console.error("Error signing in:", signInError.message);
+        if (error) {
+          console.error("Error signing in:", error.message);
           form.setError("password", {
             type: "manual",
-            message: signInError.message ?? "Invalid email or password. Please try again.",
+            message: error.message ?? "Invalid email or password. Please try again.",
           });
           return;
         }
@@ -80,16 +80,15 @@ const Auth = ({ className }: AuthProps) => {
       }
     } else {
       try {
-        const { data, error: signUpError } = await supabase.auth.signUp({
+        const { error, data } = await supabase.auth.signUp({
           email: values.email,
           password: values.password,
         });
 
-        if (signUpError) {
-          console.error("Error signing up:", signUpError.message);
-          form.setError("password", {
+        if (error?.message?.includes("already registered")) {
+          form.setError("email", {
             type: "manual",
-            message: signUpError.message ?? "Unable to sign up. Please try again.",
+            message: "Email is already in use. Please use a different email.",
           });
           return;
         }

@@ -1,10 +1,12 @@
 import TaskItem from "./TaskItem";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Task } from "@/types/task";
+import type { Session } from "@supabase/supabase-js";
 
 interface TaskListProps {
   className?: string;
   tasks: Task[];
+  session: Session | null;
   fetching: boolean;
   updatingId: number | null;
   deletingId: number | null;
@@ -15,6 +17,7 @@ interface TaskListProps {
 const TaskList = ({
   className,
   tasks,
+  session,
   fetching,
   updatingId,
   deletingId,
@@ -50,6 +53,7 @@ const TaskList = ({
                 <TaskItem
                   key={task.id}
                   task={task}
+                  session={session}
                   onDelete={(id) => void onDeleteTask(id)}
                   onEdit={handleEdit}
                   isUpdating={updatingId === task.id}

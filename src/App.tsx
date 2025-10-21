@@ -38,9 +38,6 @@ const App = () => {
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event, session);
       setSession(session);
-      if (!session) {
-        setTasks([]);
-      }
     });
 
     return () => {
@@ -77,14 +74,26 @@ const App = () => {
   useEffect(() => {
     const channel = supabase
       .channel("tasks-channel")
+      // เมื่อมีการเพิ่ม task
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "tasks" }, (payload) => {
         const newTask = payload.new as Task;
         setTasks((prev) => [...prev, newTask]);
+      })
+      // เมื่อมีการอัปเดต task
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "tasks" }, (payload) => {
+        const updatedTask = payload.new as Task;
+        setTasks((prev) => prev.map((task) => (task.id === updatedTask.id ? updatedTask : task)));
+      })
+      // เมื่อมีการลบ task
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "tasks" }, (payload) => {
+        const deletedTask = payload.old as Task;
+        setTasks((prev) => prev.filter((task) => task.id !== deletedTask.id));
       })
       .subscribe((status) => {
         console.log("Subscription status:", status);
       });
 
+    // cleanup เพื่อยกเลิก channel เมื่อ component ถูก unmount
     return () => {
       supabase.removeChannel(channel);
     };
@@ -203,6 +212,7 @@ const App = () => {
           <TaskList
             className="w-full mx-auto max-w-3xl rounded-3xl border bg-card p-6 shadow-lg transition-colors lg:mx-0 lg:max-w-none"
             tasks={tasks}
+            session={session}
             fetching={fetching}
             updatingId={updatingId}
             deletingId={deletingId}
