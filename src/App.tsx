@@ -1,20 +1,43 @@
 import { useEffect, useState } from "react";
-import { ListTodo, MoonStar, Plus, Sun } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import AddTask from "./components/AddTask";
+import TaskList from "./components/TaskList";
+import { TaskProvider } from "./context/TaskProvider";
+import type { ThemeMode } from "./types/theme";
+import Auth from "./components/Auth";
+
+const THEME_STORAGE_KEY = "theme-preference";
 
 const App = () => {
-  const [theme, setTheme] = useState<"light" | "dark">(() => {
+  const [theme, setTheme] = useState<ThemeMode>(() => {
     if (typeof window === "undefined") {
       return "light";
     }
 
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored === "light" || stored === "dark") {
+      return stored;
+    }
+
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = (event: MediaQueryListEvent) => {
+      if (!window.localStorage.getItem(THEME_STORAGE_KEY)) {
+        setTheme(event.matches ? "dark" : "light");
+      }
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -22,50 +45,33 @@ const App = () => {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+    setTheme((prev) => {
+      const next = prev === "dark" ? "light" : "dark";
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(THEME_STORAGE_KEY, next);
+      }
+      return next;
+    });
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors">
-      <div className="container mx-auto px-6 py-10">
-        <div className="flex justify-end">
-          <Button
-            aria-label="Toggle theme"
-            onClick={toggleTheme}
-            size="icon"
-            variant="outline"
-          >
-            {theme === "dark" ? <Sun className="size-5" /> : <MoonStar className="size-5" />}
-          </Button>
-        </div>
-        <div className="mx-auto mt-12 max-w-md rounded-3xl border border-border bg-card p-6 shadow-lg transition-colors">
-          <header>
-            <h2 className="flex items-center text-xl font-semibold text-card-foreground">
-              <ListTodo />
-              <span className="ml-2">Task Manager</span>
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Simple <span className="font-semibold text-green-500">Supabase</span> CRUD application.
-              <Button asChild className="ml-1 inline-flex p-0 align-baseline" variant="link">
-                <a href="https://github.com/morsechimwai/react-supabase-crud" rel="noreferrer" target="_blank">
-                  View on GitHub
-                </a>
-              </Button>
-            </p>
-          </header>
-
-          <div className="mt-4 space-y-2">
-            <Input placeholder="Task Title" />
-            <Textarea className="min-h-32" placeholder="Task Description" />
+    <TaskProvider>
+      <div className="min-h-screen text-foreground transition-colors">
+        <div className="container mx-auto px-4 py-10">
+          <div className="grid gap-6 lg:grid-cols-[1fr_minmax(0,450px)]">
+            <TaskList className="w-full mx-auto max-w-3xl rounded-3xl border bg-card p-6 shadow-lg transition-colors lg:mx-0 lg:max-w-none" />
+            <div className="space-y-6 lg:sticky lg:top-10 lg:h-fit lg:max-h-[calc(100vh-5rem)]">
+              <AddTask
+                className="w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors mx-auto lg:mx-0 lg:max-w-none "
+                toggleTheme={toggleTheme}
+                theme={theme}
+              />
+              <Auth className="w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors mx-auto lg:mx-0 lg:max-w-none" />
+            </div>
           </div>
-
-          <Button className="mt-4 w-full">
-            <Plus />
-            <span className="font-semibold">Add Task</span>
-          </Button>
         </div>
       </div>
-    </div>
+    </TaskProvider>
   );
 };
 

@@ -36,6 +36,8 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --pattern-base: oklch(1 0 0 / 0.8);
+  --pattern-dot: oklch(0.145 0 0 / 0.18);
 }
 
 @theme inline {
@@ -108,6 +110,8 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --pattern-base: oklch(0.145 0 0 / 0.95);
+  --pattern-dot: oklch(0.985 0 0 / 0.28);
 }
 
 @layer base {
@@ -116,5 +120,11 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-color: var(--pattern-base);
+    background-image:
+      radial-gradient(var(--pattern-dot) 1px, transparent 1px),
+      radial-gradient(var(--pattern-dot) 1px, var(--pattern-base) 1px);
+    background-size: 20px 20px;
+    background-position: 0 0, 10px 10px;
   }
 }
