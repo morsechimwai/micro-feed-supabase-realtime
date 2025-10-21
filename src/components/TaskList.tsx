@@ -8,11 +8,8 @@ interface TaskListProps {
   fetching: boolean;
   updatingId: number | null;
   deletingId: number | null;
-  onDeleteTask: (id: number) => Promise<boolean>;
-  onUpdateTask: (
-    id: number,
-    updates: Pick<Task, "title" | "description">
-  ) => Promise<boolean>;
+  onDeleteTask: (id: number) => Promise<void>;
+  onUpdateTask: (id: number, updates: Pick<Task, "title" | "description">) => Promise<void>;
 }
 
 const TaskList = ({

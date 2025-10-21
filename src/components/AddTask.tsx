@@ -11,13 +11,14 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from "./ui/form";
 import z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { Task } from "@/types/task";
 
 interface AddTaskProps {
   className?: string;
   toggleTheme: () => void;
   theme: ThemeMode;
   adding: boolean;
-  onAddTask: (task: { title: string; description?: string }) => Promise<boolean>;
+  onAddTask: (task: Pick<Task, "title" | "description">) => Promise<void>;
 }
 
 const AddTask = ({ className, toggleTheme, theme, adding, onAddTask }: AddTaskProps) => {
@@ -44,14 +45,12 @@ const AddTask = ({ className, toggleTheme, theme, adding, onAddTask }: AddTaskPr
   const titleValue = form.watch("title");
 
   const onSubmit = async (values: z.infer<typeof taskSchema>) => {
-    const success = await onAddTask({
+    await onAddTask({
       title: values.title,
       description: values.description ?? "",
     });
 
-    if (success) {
-      form.reset();
-    }
+    form.reset();
   };
 
   const handleLogout = async () => {

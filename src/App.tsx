@@ -1,5 +1,5 @@
 // React
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 // UI Components
 import Auth from "./components/Auth";
@@ -48,15 +48,10 @@ const App = () => {
     };
   }, []);
 
-  const fetchTasks = useCallback(async () => {
-    if (!session) {
-      setTasks([]);
-      return;
-    }
-
+  const fetchTasks = async () => {
     setFetching(true);
     try {
-      const { data, error } = await supabase
+      const { error, data } = await supabase
         .from("tasks")
         .select("*")
         .order("created_at", { ascending: true });
@@ -69,112 +64,90 @@ const App = () => {
       setTasks(data || []);
     } catch (error) {
       console.error("Unexpected error fetching tasks:", error);
+      return;
     } finally {
       setFetching(false);
     }
-  }, [session]);
+  };
 
   useEffect(() => {
-    void fetchTasks();
-  }, [fetchTasks]);
+    fetchTasks();
+  }, []);
 
-  const handleAddTask = useCallback(
-    async (task: { title: string; description?: string }) => {
-      if (!session) {
-        return false;
+  useEffect(() => {
+    const channel = supabase
+      .channel("tasks-channel")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "tasks" }, (payload) => {
+        const newTask = payload.new as Task;
+        setTasks((prev) => [...prev, newTask]);
+      })
+      .subscribe((status) => {
+        console.log("Subscription status:", status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const handleAddTask = async (task: Pick<Task, "title" | "description">) => {
+    setAdding(true);
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .insert({
+          title: task.title,
+          description: task.description ?? "",
+          email: session?.user.email,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error adding task:", error.message);
+        return;
       }
+    } catch (error) {
+      console.error("Unexpected error adding task:", error);
+      return;
+    } finally {
+      setAdding(false);
+    }
+  };
 
-      setAdding(true);
-      try {
-        const { data, error } = await supabase
-          .from("tasks")
-          .insert({
-            title: task.title,
-            description: task.description ?? "",
-          })
-          .select()
-          .single<Task>();
+  const handleDeleteTask = async (id: number) => {
+    setDeletingId(id);
+    try {
+      const { error } = await supabase.from("tasks").delete().eq("id", id).select().single();
 
-        if (error || !data) {
-          console.error("Error adding task:", error?.message ?? "No data returned");
-          return false;
-        }
-
-        setTasks((prev) => [...prev, data]);
-        return true;
-      } catch (error) {
-        console.error("Unexpected error adding task:", error);
-        return false;
-      } finally {
-        setAdding(false);
+      if (error) {
+        console.error("Error deleting task:", error.message);
+        return;
       }
-    },
-    [session]
-  );
+    } catch (error) {
+      console.error("Unexpected error deleting task:", error);
+      return;
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
-  const handleDeleteTask = useCallback(
-    async (id: number) => {
-      if (!session) {
-        return false;
+  const handleUpdateTask = async (id: number, updates: Pick<Task, "title" | "description">) => {
+    setUpdatingId(id);
+    try {
+      const { error } = await supabase.from("tasks").update(updates).eq("id", id).select().single();
+
+      if (error) {
+        console.error("Error updating task:", error.message);
+        return;
       }
-
-      setDeletingId(id);
-      try {
-        const { data, error } = await supabase
-          .from("tasks")
-          .delete()
-          .eq("id", id)
-          .select()
-          .single<Task>();
-
-        if (error || !data) {
-          console.error("Error deleting task:", error?.message ?? "Task not found");
-          return false;
-        }
-
-        setTasks((prev) => prev.filter((task) => task.id !== id));
-        return true;
-      } catch (error) {
-        console.error("Unexpected error deleting task:", error);
-        return false;
-      } finally {
-        setDeletingId(null);
-      }
-    },
-    [session]
-  );
-
-  const handleUpdateTask = useCallback(
-    async (id: number, updates: Pick<Task, "title" | "description">) => {
-      if (!session) {
-        return false;
-      }
-
-      setUpdatingId(id);
-      try {
-        const { data, error } = await supabase
-          .from("tasks")
-          .update(updates)
-          .eq("id", id)
-          .select()
-          .single<Task>();
-
-        if (error || !data) {
-          console.error("Error updating task:", error?.message ?? "Task not found");
-          return false;
-        }
-
-        setTasks((prev) => prev.map((task) => (task.id === id ? data : task)));
-        return true;
-      } catch (error) {
-        console.error("Unexpected error updating task:", error);
-        return false;
-      } finally {
-        setUpdatingId(null);
-      }
-    },
-    [session]
-  );
+    } catch (error) {
+      console.error("Unexpected error updating task:", error);
+      return;
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   const [theme, setTheme] = useState<ThemeMode>(() => {
     if (typeof window === "undefined") {
