@@ -9,6 +9,8 @@
 - แสดงเวลางานด้วย Day.js ทั้งแบบ relative เวลาใกล้ปัจจุบันและรูปแบบวันที่
 - ปรับธีม Light/Dark และบันทึกค่าไว้ใน Local Storage
 
+[Live Demo](https://react-supabase-realtime-tasks.vercel.app/)
+
 ## Quick Start
 1. ติดตั้ง Node.js เวอร์ชัน 18 ขึ้นไป
 2. โคลนโปรเจกต์และติดตั้งแพ็กเกจ
