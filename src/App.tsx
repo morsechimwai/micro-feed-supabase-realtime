@@ -222,14 +222,18 @@ const App = () => {
           <div className="space-y-6 lg:sticky lg:top-10 lg:h-fit lg:max-h-[calc(100vh-5rem)]">
             {session ? (
               <AddTask
-                className="w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors mx-auto lg:mx-0 lg:max-w-none "
+                className="w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors mx-auto lg:mx-0 lg:max-w-none"
                 toggleTheme={toggleTheme}
                 theme={theme}
                 adding={adding}
                 onAddTask={handleAddTask}
               />
             ) : (
-              <Auth className="w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors mx-auto lg:mx-0 lg:max-w-none" />
+              <Auth
+                className="w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors mx-auto lg:mx-0 lg:max-w-none"
+                toggleTheme={toggleTheme}
+                theme={theme}
+              />
             )}
             <p className="mt-2 text-sm text-muted-foreground">
               Simple{" "}

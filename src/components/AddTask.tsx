@@ -68,20 +68,18 @@ const AddTask = ({ className, toggleTheme, theme, adding, onAddTask }: AddTaskPr
 
   return (
     <div className={`${className}`}>
-      <header>
-        <div className="flex flex-wrap items-start justify-between gap-3 sm:items-center">
-          <h2 className="flex items-center text-xl font-semibold text-card-foreground">
-            <ListTodo />
-            <span className="ml-2">Task Manager</span>
-          </h2>
-          <div className="flex flex-row gap-2">
-            <Button aria-label={themeLabel} onClick={toggleTheme} size="icon" variant="outline">
-              {themeIcon}
-            </Button>
-            <Button aria-label="Log Out" onClick={handleLogout} size="icon" variant="destructive">
-              {logouting ? <Spinner /> : <LogOut />}
-            </Button>
-          </div>
+      <header className="flex flex-wrap items-start justify-between gap-3 sm:items-center">
+        <h2 className="flex items-center text-xl font-semibold text-card-foreground">
+          <ListTodo />
+          <span className="ml-2">Task Manager</span>
+        </h2>
+        <div className="flex flex-row gap-2">
+          <Button aria-label={themeLabel} onClick={toggleTheme} size="icon" variant="outline">
+            {themeIcon}
+          </Button>
+          <Button aria-label="Log Out" onClick={handleLogout} size="icon" variant="destructive">
+            {logouting ? <Spinner /> : <LogOut />}
+          </Button>
         </div>
       </header>
 
@@ -106,7 +104,12 @@ const AddTask = ({ className, toggleTheme, theme, adding, onAddTask }: AddTaskPr
               render={({ field, fieldState }) => (
                 <FormItem>
                   <FormControl>
-                    <Textarea placeholder="Task Description (optional)" rows={4} {...field} />
+                    <Textarea
+                      className="resize-y max-h-60"
+                      placeholder="Task Description (optional)"
+                      rows={4}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage>{fieldState.error?.message}</FormMessage>
                 </FormItem>
