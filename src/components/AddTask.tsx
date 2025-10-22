@@ -26,9 +26,10 @@ interface AddTaskProps {
   theme: ThemeMode;
   adding: boolean;
   onAddTask: (task: Pick<Task, "title" | "description" | "image_url">) => Promise<void>;
+  onSubmitted?: () => void;
 }
 
-const AddTask = ({ className, toggleTheme, theme, adding, onAddTask }: AddTaskProps) => {
+const AddTask = ({ className, toggleTheme, theme, adding, onAddTask, onSubmitted }: AddTaskProps) => {
   const [logouting, setLogouting] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -148,6 +149,7 @@ const AddTask = ({ className, toggleTheme, theme, adding, onAddTask }: AddTaskPr
       form.reset();
       clearPreview();
       form.clearErrors("image_file");
+      onSubmitted?.();
     } catch (error) {
       console.error("Error uploading image:", error);
       const message = error instanceof Error ? error.message : "Unable to upload image";

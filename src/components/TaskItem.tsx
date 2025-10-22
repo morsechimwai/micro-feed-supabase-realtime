@@ -1,6 +1,5 @@
 // UI Components
 import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 // Icons
-import { EllipsisVertical, MessageCircleMore, Pencil, Trash2, User2 } from "lucide-react";
+import { EllipsisVertical, Laugh, MessageCircleMore, Pencil, Trash2 } from "lucide-react";
 
 // Types
 import type { Task } from "@/types/task";
@@ -54,23 +53,24 @@ const TaskItem = ({ task, session, onDelete, onEdit, isUpdating, isDeleting }: T
       <li className="bg-card flex flex-col gap-4 border shadow-sm transition-colors hover:bg-accent hover:shadow-md rounded-3xl overflow-hidden">
         <div className="space-y-2">
           <div className="flex flex-row items-center justify-between pt-2">
-            <div className="flex flex-row items-center px-4 mt-2 gap-2">
-              <Badge variant="secondary" className="text-xs inline-block w-fit p-1">
-                {task.email !== session?.user.email ? (
-                  <User2 className="inline-block size-4 mr-1" />
-                ) : null}
-                <span>
-                  {task.email === session?.user.email ? (
-                    <span className="text-green-500">My Task</span>
-                  ) : (
-                    task.email
-                  )}
-                </span>
-              </Badge>
-              <h3 className="text-lg font-semibold text-secondary-foreground break-words">
-                {task.title}
-              </h3>
+            <div className="px-4 mt-2 gap-2">
+              <div className="flex flex-row items-center gap-2">
+                <Laugh className="inline size-8 mr-2 mb-1 text-secondary-foreground" />
+                <div>
+                  <div className="text-sm font-bold">
+                    {task.email === session?.user.email ? (
+                      <span className="text-green-500">My Task</span>
+                    ) : (
+                      task.email
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {formatCreatedAt(task.created_at)}
+                  </div>
+                </div>
+              </div>
             </div>
+
             <div className="flex items-center gap-2 sm:justify-end">
               {session && session.user.email === task.email && (
                 <DropdownMenu modal={false}>
@@ -95,23 +95,19 @@ const TaskItem = ({ task, session, onDelete, onEdit, isUpdating, isDeleting }: T
             </div>
           </div>
 
-          {displayImage ? (
-            <img src={displayImage} alt={task.title} className="h-84 w-full object-cover" />
-          ) : (
-            <div className="flex h-32 w-full items-center justify-center rounded-md border bg-muted text-sm text-muted-foreground">
-              No image selected
-            </div>
-          )}
+          <div>
+            {displayImage ? (
+              <img src={displayImage} alt={task.title} className="h-84 w-full object-cover" />
+            ) : null}
+          </div>
 
-          <div className="px-4 pb-4 space-y-2 relative">
-            <div className="flex items-start gap-4">
-              <MessageCircleMore className="size-5 mt-2 shrink-0" />
-              <p className="flex-1 text-base whitespace-pre-wrap break-all">{task.description}</p>
-            </div>
-            <div className="flex flex-row items-center gap-2">
-              <span className="text-xs text-muted-foreground ml-9">
-                {formatCreatedAt(task.created_at)}
-              </span>
+          <div className="mb-2 px-4">
+            <h3 className="text-based text-secondary-foreground break-words">{task.title}</h3>
+            <div className="flex flex-row items-center gap-1.5 mt-2">
+              <MessageCircleMore className="size-3.5" />
+              <p className="flex-1 text-sm text-muted-foreground whitespace-pre-wrap break-all">
+                {task.description}
+              </p>
             </div>
           </div>
         </div>

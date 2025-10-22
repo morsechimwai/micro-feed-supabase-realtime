@@ -37,6 +37,7 @@ import {
   parseImageReference,
   withCacheBuster,
 } from "./lib/storage";
+import { Plus } from "lucide-react";
 
 // Theme Management
 const THEME_STORAGE_KEY = "theme-preference";
@@ -61,6 +62,7 @@ const App = () => {
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
   const [editPreview, setEditPreview] = useState<string | null>(null);
   const [editUploading, setEditUploading] = useState(false);
+  const [mobileAddOpen, setMobileAddOpen] = useState(false);
 
   const editForm = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
@@ -86,6 +88,12 @@ const App = () => {
       }
     };
   }, [editPreview]);
+
+  useEffect(() => {
+    if (!session) {
+      setMobileAddOpen(false);
+    }
+  }, [session]);
 
   const resetEditPreview = () => {
     if (editPreview?.startsWith("blob:")) {
@@ -494,20 +502,31 @@ const App = () => {
       <div className="min-h-screen text-foreground transition-colors">
         <div className="container mx-auto px-4 py-10">
           <div className="grid gap-6 lg:grid-cols-[1fr_minmax(0,450px)]">
-            <TaskList
-              className="w-full mx-auto max-w-3xl transition-colors"
-              tasks={tasks}
-              session={session}
-              fetching={fetching}
-              updatingId={updatingId}
-              deletingId={deletingId}
-              onDeleteTask={handleDeleteRequest}
-              onEditTask={handleEditTask}
-            />
-            <div className="space-y-6 lg:sticky lg:top-10 lg:h-fit lg:min-h-[calc(100vh-5rem)]">
+            <div className="space-y-6">
+              {!session ? (
+                <Auth
+                  className="w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors mx-auto lg:hidden"
+                  toggleTheme={toggleTheme}
+                  theme={theme}
+                />
+              ) : null}
+
+              <TaskList
+                className="w-full mx-auto max-w-3xl transition-colors"
+                tasks={tasks}
+                session={session}
+                fetching={fetching}
+                updatingId={updatingId}
+                deletingId={deletingId}
+                onDeleteTask={handleDeleteRequest}
+                onEditTask={handleEditTask}
+              />
+            </div>
+
+            <div className="hidden space-y-6 lg:sticky lg:top-10 lg:block lg:h-fit lg:min-h-[calc(100vh-5rem)]">
               {session ? (
                 <AddTask
-                  className="w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors mx-auto lg:mx-0 lg:max-w-none"
+                  className="mx-auto w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors"
                   toggleTheme={toggleTheme}
                   theme={theme}
                   adding={adding}
@@ -515,12 +534,13 @@ const App = () => {
                 />
               ) : (
                 <Auth
-                  className="w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors mx-auto lg:mx-0 lg:max-w-none"
+                  className="mx-auto w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors"
                   toggleTheme={toggleTheme}
                   theme={theme}
                 />
               )}
-              <p className="mt-2 text-sm text-muted-foreground">
+
+              <p className="text-sm text-muted-foreground">
                 Simple{" "}
                 <a
                   className="font-semibold text-green-500"
@@ -554,6 +574,30 @@ const App = () => {
           </div>
         </div>
       </div>
+      {session ? (
+        <>
+          <Button
+            aria-label="Add Task"
+            size="icon"
+            className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-xl transition hover:scale-105 focus-visible:ring-2 focus-visible:ring-offset-2 lg:hidden"
+            onClick={() => setMobileAddOpen(true)}
+          >
+            <Plus className="size-6" />
+          </Button>
+          <Dialog open={mobileAddOpen} onOpenChange={setMobileAddOpen}>
+            <DialogContent className="p-2 border-0 sm:max-w-[420px] bg-transparent sm:shadow-none">
+              <AddTask
+                className="w-full space-y-4 rounded-3xl border bg-card p-6 shadow-lg"
+                toggleTheme={toggleTheme}
+                theme={theme}
+                adding={adding}
+                onAddTask={handleAddTask}
+                onSubmitted={() => setMobileAddOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        </>
+      ) : null}
 
       <Dialog open={deleteDialogOpen} onOpenChange={handleDeleteDialogChange}>
         <DialogContent>
