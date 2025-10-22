@@ -19,7 +19,7 @@ import type { Task } from "@/types/task";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/supabase-client";
 import { formatCreatedAt } from "@/lib/utils";
-import { TASK_IMAGES_BUCKET, parseImageReference } from "@/lib/storage";
+import { TASK_IMAGES_BUCKET, parseImageReference, withCacheBuster } from "@/lib/storage";
 
 interface TaskItemProps {
   task: Task;
@@ -32,11 +32,22 @@ interface TaskItemProps {
 
 const TaskItem = ({ task, session, onDelete, onEdit, isUpdating, isDeleting }: TaskItemProps) => {
   const imageReference = parseImageReference(task.image_url);
-  const displayImage =
-    imageReference.publicUrl ??
-    (imageReference.path
-      ? supabase.storage.from(TASK_IMAGES_BUCKET).getPublicUrl(imageReference.path).data.publicUrl
-      : null);
+  const displayImage = (() => {
+    if (imageReference.publicUrl) {
+      return imageReference.publicUrl;
+    }
+
+    if (!imageReference.path) {
+      return null;
+    }
+
+    const { data } = supabase.storage.from(TASK_IMAGES_BUCKET).getPublicUrl(imageReference.path);
+    if (!data.publicUrl) {
+      return null;
+    }
+
+    return withCacheBuster(data.publicUrl, task.created_at ?? undefined);
+  })();
 
   return (
     <>

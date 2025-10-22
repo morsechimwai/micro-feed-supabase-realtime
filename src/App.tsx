@@ -34,8 +34,8 @@ import {
   TASK_IMAGES_BUCKET,
   composeImageReference,
   createStoragePath,
-  isFile,
   parseImageReference,
+  withCacheBuster,
 } from "./lib/storage";
 
 // Theme Management
@@ -75,6 +75,9 @@ const App = () => {
   });
 
   const editImageValue = editForm.watch("image_url");
+
+  const isFile = (value: unknown): value is File =>
+    typeof File !== "undefined" && value instanceof File;
 
   useEffect(() => {
     return () => {
@@ -152,7 +155,10 @@ const App = () => {
       return null;
     }
     const { data } = supabase.storage.from(TASK_IMAGES_BUCKET).getPublicUrl(path);
-    return data.publicUrl ?? null;
+    if (!data.publicUrl) {
+      return null;
+    }
+    return withCacheBuster(data.publicUrl);
   };
 
   useEffect(() => {
@@ -449,7 +455,12 @@ const App = () => {
         }
 
         const { data } = supabase.storage.from(TASK_IMAGES_BUCKET).getPublicUrl(targetPath);
-        nextImageReference = composeImageReference(targetPath, data.publicUrl);
+        if (!data.publicUrl) {
+          throw new Error("Unable to generate public URL for updated image");
+        }
+
+        const versionedUrl = withCacheBuster(data.publicUrl);
+        nextImageReference = composeImageReference(targetPath, versionedUrl);
       } else if (!values.image_url && existingReference.path) {
         const { error: storageError } = await supabase.storage
           .from(TASK_IMAGES_BUCKET)

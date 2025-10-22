@@ -17,6 +17,7 @@ import {
   TASK_IMAGES_BUCKET,
   composeImageReference,
   createStoragePath,
+  withCacheBuster,
 } from "@/lib/storage";
 
 interface AddTaskProps {
@@ -120,7 +121,12 @@ const AddTask = ({ className, toggleTheme, theme, adding, onAddTask }: AddTaskPr
     }
 
     const { data } = supabase.storage.from(TASK_IMAGES_BUCKET).getPublicUrl(path);
-    return composeImageReference(path, data.publicUrl);
+    if (!data.publicUrl) {
+      throw new Error("Unable to generate public URL for uploaded image");
+    }
+
+    const versionedUrl = withCacheBuster(data.publicUrl);
+    return composeImageReference(path, versionedUrl);
   };
 
   const onSubmit = async (values: z.infer<typeof taskSchema>) => {

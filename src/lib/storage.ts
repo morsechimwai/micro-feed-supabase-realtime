@@ -3,9 +3,6 @@ export const MAX_IMAGE_FILE_SIZE_BYTES = 2 * 1024 * 1024;
 
 const RANDOM_FALLBACK = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-export const isFile = (value: unknown): value is File =>
-  typeof File !== "undefined" && value instanceof File;
-
 export const createStoragePath = (fileName: string) => {
   const extension = fileName.split(".").pop();
   const uuid =
@@ -57,6 +54,12 @@ export const getStoragePathFromUrl = (url: string) => {
     const [path] = raw.split("?");
     return decodeURIComponent(path);
   }
+};
+
+export const withCacheBuster = (url: string, suffix?: string) => {
+  const token = suffix ?? Date.now().toString(36);
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}v=${token}`;
 };
 
 export const composeImageReference = (path: string, publicUrl: string) => `${path}|${publicUrl}`;
