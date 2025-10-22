@@ -512,7 +512,7 @@ const App = () => {
               ) : null}
 
               <TaskList
-                className="w-full mx-auto max-w-3xl transition-colors"
+                className="w-full mx-auto max-w-4xl transition-colors"
                 tasks={tasks}
                 session={session}
                 fetching={fetching}
