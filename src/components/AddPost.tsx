@@ -1,5 +1,5 @@
 import { type ChangeEvent, useEffect, useState } from "react";
-import { ListTodo, LogOut, MoonStar, Plus, Sun } from "lucide-react";
+import { ListTodo, LogOut, MessageCircleMore, MoonStar, Plus, Sun } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -190,7 +190,7 @@ const AddTask = ({
           </Button>
         </div>
         <h2 className="flex items-center text-xl font-semibold text-card-foreground">
-          <ListTodo />
+          <MessageCircleMore />
           <span className="ml-2">MicroFeed</span>
         </h2>
       </header>

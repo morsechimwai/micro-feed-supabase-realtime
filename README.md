@@ -2,8 +2,8 @@
 
 แพลตฟอร์ม microfeed ที่สร้างด้วย React, TypeScript และ Supabase เพื่อให้ผู้ใช้เผยแพร่ แก้ไข และลบโพสต์ได้แบบเรียลไทม์ พร้อมระบบยืนยันตัวตนและการปรับธีม
 
-![MicroFeed Screenshot](./public/preview.png)
-Live Demo: [https://react-supabase-realtime-tasks.vercel.app](https://react-supabase-realtime-tasks.vercel.app/)
+<!-- ![MicroFeed Screenshot](./public/preview.png)
+Live Demo: [https://react-supabase-realtime-tasks.vercel.app](https://react-supabase-realtime-tasks.vercel.app/) -->
 
 ## Feature
 - จัดการโพสต์ครบวงจร: เพิ่ม แก้ไข (ผ่าน dialog) และลบโพสต์ พร้อมตรวจสอบข้อมูลด้วย Zod
