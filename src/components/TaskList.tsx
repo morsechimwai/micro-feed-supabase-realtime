@@ -1,12 +1,21 @@
 // UI Components
 import { Skeleton } from "@/components/ui/skeleton";
 import TaskItem from "./TaskItem";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 
 // Types
 import type { Task } from "@/types/task";
 
 // Supabase
 import type { Session } from "@supabase/supabase-js";
+import { MessageCircle, MessageCircleOff } from "lucide-react";
 
 interface TaskListProps {
   className?: string;
@@ -40,7 +49,18 @@ const TaskList = ({
             <Skeleton className="h-96 w-full rounded-3xl border" />
           </div>
         ) : tasks.length === 0 ? (
-          <p className="mt-2 text-sm text-muted-foreground">No tasks available.</p>
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <MessageCircleOff className="h-12 w-12 text-muted-foreground" />
+              </EmptyMedia>
+              <EmptyTitle>No Tasks Yet</EmptyTitle>
+              <EmptyDescription>
+                You haven&apos;t created any tasks yet. Get started by creating your first task.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>Create a new task using the (+ Add Task) button.</EmptyContent>
+          </Empty>
         ) : (
           <ul className="space-y-4">
             {tasks
