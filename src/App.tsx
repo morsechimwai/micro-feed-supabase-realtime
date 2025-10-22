@@ -502,10 +502,10 @@ const App = () => {
       <div className="min-h-screen text-foreground transition-colors">
         <div className="container mx-auto px-4 py-10">
           <div className="grid gap-6 lg:grid-cols-[1fr_minmax(0,450px)]">
-            <div className="space-y-6">
+            <div className="space-y-6 relative">
               {!session ? (
                 <Auth
-                  className="w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors mx-auto lg:hidden"
+                  className="w-full sticky -top-5 rounded-3xl border bg-card p-6 shadow-lg transition-colors mx-auto lg:hidden"
                   toggleTheme={toggleTheme}
                   theme={theme}
                 />
