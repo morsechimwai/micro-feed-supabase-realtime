@@ -59,7 +59,7 @@ const TaskItem = ({ task, session, onDelete, onEdit, isUpdating, isDeleting }: T
                 <div>
                   <div className="text-sm font-bold">
                     {task.email === session?.user.email ? (
-                      <span className="text-green-500">My Task</span>
+                      <span className="dark:text-green-500 text-green-700">My Task</span>
                     ) : (
                       task.email
                     )}
