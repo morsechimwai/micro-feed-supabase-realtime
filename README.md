@@ -7,6 +7,7 @@ Live Demo: [https://react-supabase-realtime-tasks.vercel.app](https://react-supa
 
 ## Feature
 - จัดการงานครบวงจร: เพิ่ม แก้ไข (ผ่าน dialog) และลบงาน พร้อมตรวจสอบข้อมูลด้วย Zod
+- แนบรูปประกอบงาน: อัปโหลดภาพไปยัง Supabase Storage พร้อมแสดงตัวอย่าง, แก้ไขภาพทับไฟล์เดิม และลบภาพออกจาก Storage เมื่อเอางานลง
 - ซิงก์เรียลไทม์: รับการเปลี่ยนแปลงจาก Supabase ผ่านช่องทาง `postgres_changes`
 - ระบบยืนยันตัวตน Supabase Auth สำหรับลงชื่อเข้าใช้/ออก
 - แสดงเวลางานด้วย Day.js ทั้งแบบ relative เวลาใกล้ปัจจุบันและรูปแบบวันที่
@@ -27,8 +28,9 @@ Live Demo: [https://react-supabase-realtime-tasks.vercel.app](https://react-supa
    ```
 5. เปิดเบราว์เซอร์ที่ `http://localhost:5173`
 
-### Supabase Setup (Sign-in Flow)
+### Supabase Setup (Auth + Storage)
 1. สร้าง Supabase Project และเปิดการใช้งาน Authentication (Email)
+   
 2. สร้างตาราง `tasks` ด้วยโครงสร้างตัวอย่าง:
    ```sql
    create table if not exists public.tasks (
@@ -57,7 +59,30 @@ Live Demo: [https://react-supabase-realtime-tasks.vercel.app](https://react-supa
       on public.tasks for delete using (email = auth.jwt() ->> 'email');
    ```
 
-4. ตั้งค่าตัวแปรแวดล้อม `VITE_SUPABASE_URL` และ `VITE_SUPABASE_KEY` เป็นค่า anon key (Public)
+4. สร้าง Storage bucket สำหรับเก็บภาพ เช่น `tasks-images` (ตั้งค่า public = false เพื่อให้เข้าถึงผ่าน policy)
+   
+5. เพิ่ม Storage Policy เพื่อให้อ่านได้สาธารณะ แต่จำกัดการแก้ไขเฉพาะผู้ใช้ที่ยืนยันตัวตน:
+   ```sql
+   -- เปิดใช้งาน RLS (เปิดอัตโนมัติเมื่อสร้าง bucket ใหม่)
+   create policy "Public read access"
+     on storage.objects for select
+     using (bucket_id = 'tasks-images');
+
+   create policy "Authenticated upload"
+     on storage.objects for insert
+     with check (bucket_id = 'tasks-images' and auth.role() = 'authenticated');
+
+   create policy "Update own uploads"
+     on storage.objects for update
+     using (bucket_id = 'tasks-images' and auth.role() = 'authenticated');
+
+   create policy "Delete own uploads"
+     on storage.objects for delete
+     using (bucket_id = 'tasks-images' and auth.role() = 'authenticated');
+   ```
+   > หมายเหตุ: ถ้าต้องการจำกัดให้แก้ไขได้เฉพาะไฟล์ของตัวเอง ให้ปรับ policy ให้ตรวจสอบ `owner` ผ่าน metadata หรือโครงสร้างเพิ่มเติมตามความต้องการ
+
+6. ตั้งค่าตัวแปรแวดล้อม `VITE_SUPABASE_URL` และ `VITE_SUPABASE_KEY` เป็นค่า anon key (Public)
 
 ## Environment Variables
 ตั้งค่าตัวแปรต่อไปนี้ใน `.env.local`
