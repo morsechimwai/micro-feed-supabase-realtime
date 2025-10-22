@@ -10,12 +10,14 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 
+// Icons
+import { MessageCircleOff } from "lucide-react";
+
 // Types
 import type { Task } from "@/types/task";
 
 // Supabase
 import type { Session } from "@supabase/supabase-js";
-import { MessageCircle, MessageCircleOff } from "lucide-react";
 
 interface TaskListProps {
   className?: string;

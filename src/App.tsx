@@ -275,7 +275,9 @@ const App = () => {
     try {
       const reference = parseImageReference(task.image_url);
       if (reference.path) {
-        const { data, error: storageError } = await supabase.storage
+        console.log("Deleting image from storage:", reference);
+        console.log("Deleting image from storage at path:", reference.path);
+        const { error: storageError, data } = await supabase.storage
           .from(TASK_IMAGES_BUCKET)
           .remove([reference.path]);
 
