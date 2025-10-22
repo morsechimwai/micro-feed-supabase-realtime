@@ -1,5 +1,5 @@
 import { type ChangeEvent, useEffect, useState } from "react";
-import { ListTodo, LogOut, MessageCircleMore, MoonStar, Plus, Sun } from "lucide-react";
+import { LogOut, MessageCircleMore, MoonStar, Plus, Sun } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
