@@ -12,7 +12,7 @@ import {
 import { EllipsisVertical, Laugh, MessageCircleMore, Pencil, Trash2 } from "lucide-react";
 
 // Types
-import type { Task } from "@/types/task";
+import type { Task } from "@/types/post";
 
 // Supabase
 import type { Session } from "@supabase/supabase-js";
@@ -59,7 +59,7 @@ const TaskItem = ({ task, session, onDelete, onEdit, isUpdating, isDeleting }: T
                 <div>
                   <div className="text-sm font-bold">
                     {task.email === session?.user.email ? (
-                      <span className="dark:text-green-500 text-green-700">My Task</span>
+                      <span className="dark:text-green-500 text-green-700">My Post</span>
                     ) : (
                       task.email
                     )}

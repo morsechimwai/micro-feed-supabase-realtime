@@ -1,6 +1,6 @@
 // UI Components
 import { Skeleton } from "@/components/ui/skeleton";
-import TaskItem from "./TaskItem";
+import TaskItem from "./PostItem";
 import {
   Empty,
   EmptyContent,
@@ -14,7 +14,7 @@ import {
 import { MessageCircleOff } from "lucide-react";
 
 // Types
-import type { Task } from "@/types/task";
+import type { Task } from "@/types/post";
 
 // Supabase
 import type { Session } from "@supabase/supabase-js";
@@ -56,12 +56,12 @@ const TaskList = ({
               <EmptyMedia variant="icon">
                 <MessageCircleOff className="h-12 w-12 text-muted-foreground" />
               </EmptyMedia>
-              <EmptyTitle>No Tasks Yet</EmptyTitle>
+              <EmptyTitle>No Posts Yet</EmptyTitle>
               <EmptyDescription>
-                You haven&apos;t created any tasks yet. Get started by creating your first task.
+                You haven&apos;t shared any posts yet. Get started by publishing your first post.
               </EmptyDescription>
             </EmptyHeader>
-            <EmptyContent>Create a new task using the (+ Add Task) button.</EmptyContent>
+            <EmptyContent>Create a new post using the (+) button.</EmptyContent>
           </Empty>
         ) : (
           <ul className="space-y-4">

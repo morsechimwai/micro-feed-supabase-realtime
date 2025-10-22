@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { ThemeMode } from "@/types/theme";
-import type { Task } from "@/types/task";
+import type { Task } from "@/types/post";
 import { Spinner } from "./ui/spinner";
 import { supabase } from "@/supabase-client";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "./ui/form";
@@ -29,7 +29,14 @@ interface AddTaskProps {
   onSubmitted?: () => void;
 }
 
-const AddTask = ({ className, toggleTheme, theme, adding, onAddTask, onSubmitted }: AddTaskProps) => {
+const AddTask = ({
+  className,
+  toggleTheme,
+  theme,
+  adding,
+  onAddTask,
+  onSubmitted,
+}: AddTaskProps) => {
   const [logouting, setLogouting] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -174,18 +181,18 @@ const AddTask = ({ className, toggleTheme, theme, adding, onAddTask, onSubmitted
   return (
     <div className={`${className}`}>
       <header className="flex flex-wrap items-start justify-between gap-3 sm:items-center">
-        <h2 className="flex items-center text-xl font-semibold text-card-foreground">
-          <ListTodo />
-          <span className="ml-2">Task Manager</span>
-        </h2>
         <div className="flex flex-row gap-2">
-          <Button aria-label={themeLabel} onClick={toggleTheme} size="icon" variant="outline">
-            {themeIcon}
-          </Button>
           <Button aria-label="Log Out" onClick={handleLogout} size="icon" variant="destructive">
             {logouting ? <Spinner /> : <LogOut />}
           </Button>
+          <Button aria-label={themeLabel} onClick={toggleTheme} size="icon" variant="outline">
+            {themeIcon}
+          </Button>
         </div>
+        <h2 className="flex items-center text-xl font-semibold text-card-foreground">
+          <ListTodo />
+          <span className="ml-2">MicroFeed</span>
+        </h2>
       </header>
 
       <div className="mt-4 space-y-2">
@@ -244,7 +251,7 @@ const AddTask = ({ className, toggleTheme, theme, adding, onAddTask, onSubmitted
               render={({ field, fieldState }) => (
                 <FormItem>
                   <FormControl>
-                    <Input placeholder="Task Title" autoComplete="off" {...field} />
+                    <Input placeholder="Post Title" autoComplete="off" {...field} />
                   </FormControl>
                   <FormMessage>{fieldState.error?.message}</FormMessage>
                 </FormItem>
@@ -259,7 +266,7 @@ const AddTask = ({ className, toggleTheme, theme, adding, onAddTask, onSubmitted
                   <FormControl>
                     <Textarea
                       className="max-h-60 resize-y"
-                      placeholder="Task Description (optional)"
+                      placeholder="Post Content (optional)"
                       rows={4}
                       {...field}
                     />
@@ -277,12 +284,12 @@ const AddTask = ({ className, toggleTheme, theme, adding, onAddTask, onSubmitted
               {adding || uploadingImage ? (
                 <>
                   <Spinner />
-                  {uploadingImage ? "Uploading..." : "Adding Task.."}
+                  {uploadingImage ? "Uploading..." : "Publishing..."}
                 </>
               ) : (
                 <>
                   <Plus />
-                  Add Task
+                  Publish Post
                 </>
               )}
             </Button>

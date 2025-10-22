@@ -1,16 +1,16 @@
-# Task Manager with Realtime CRUD (React + Supabase)
+# MicroFeed with Realtime CRUD (React + Supabase)
 
-เว็บแอปจัดการงานที่สร้างด้วย React, TypeScript และ Supabase เพื่อให้ผู้ใช้สร้าง แก้ไข และลบงานได้แบบเรียลไทม์ พร้อมระบบยืนยันตัวตนและการปรับธีม
+แพลตฟอร์ม microfeed ที่สร้างด้วย React, TypeScript และ Supabase เพื่อให้ผู้ใช้เผยแพร่ แก้ไข และลบโพสต์ได้แบบเรียลไทม์ พร้อมระบบยืนยันตัวตนและการปรับธีม
 
-![Task Manager Screenshot](./public/preview.png)
+![MicroFeed Screenshot](./public/preview.png)
 Live Demo: [https://react-supabase-realtime-tasks.vercel.app](https://react-supabase-realtime-tasks.vercel.app/)
 
 ## Feature
-- จัดการงานครบวงจร: เพิ่ม แก้ไข (ผ่าน dialog) และลบงาน พร้อมตรวจสอบข้อมูลด้วย Zod
-- แนบรูปประกอบงาน: อัปโหลดภาพไปยัง Supabase Storage พร้อมแสดงตัวอย่าง, แก้ไขภาพทับไฟล์เดิม และลบภาพออกจาก Storage เมื่อเอางานลง
+- จัดการโพสต์ครบวงจร: เพิ่ม แก้ไข (ผ่าน dialog) และลบโพสต์ พร้อมตรวจสอบข้อมูลด้วย Zod
+- แนบรูปประกอบโพสต์: อัปโหลดภาพไปยัง Supabase Storage พร้อมแสดงตัวอย่าง, แก้ไขภาพทับไฟล์เดิม และลบภาพออกจาก Storage เมื่อเอาโพสต์ลง
 - ซิงก์เรียลไทม์: รับการเปลี่ยนแปลงจาก Supabase ผ่านช่องทาง `postgres_changes`
 - ระบบยืนยันตัวตน Supabase Auth สำหรับลงชื่อเข้าใช้/ออก
-- แสดงเวลางานด้วย Day.js ทั้งแบบ relative เวลาใกล้ปัจจุบันและรูปแบบวันที่
+- แสดงเวลาโพสต์ด้วย Day.js ทั้งแบบ relative เวลาใกล้ปัจจุบันและรูปแบบวันที่
 - ปรับธีม Light/Dark และบันทึกค่าไว้ใน Local Storage
 
 ## Quick Start

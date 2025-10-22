@@ -3,13 +3,13 @@ import { type ChangeEvent, useEffect, useState } from "react";
 
 // UI Components
 import Auth from "./components/Auth";
-import AddTask from "./components/AddTask";
-import TaskList from "./components/TaskList";
+import AddTask from "./components/AddPost";
+import TaskList from "./components/PostList";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "./components/ui/form";
 
 // Types
 import type { ThemeMode } from "./types/theme";
-import type { Task } from "./types/task";
+import type { Task } from "./types/post";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase-client";
 
@@ -550,7 +550,7 @@ const App = () => {
                 >
                   Supabase
                 </a>{" "}
-                based{" "}
+                powered microfeed built with{" "}
                 <a
                   className="font-semibold text-sky-500"
                   href="https://react.dev"
@@ -559,7 +559,7 @@ const App = () => {
                 >
                   React
                 </a>{" "}
-                CRUD application with Authentication.
+                and secure authentication.
                 <Button asChild className="ml-1 inline-flex p-0 align-baseline" variant="link">
                   <a
                     href="https://github.com/morsechimwai/react-supabase-crud"
@@ -577,7 +577,7 @@ const App = () => {
       {session ? (
         <>
           <Button
-            aria-label="Add Task"
+            aria-label="New Post"
             size="icon"
             className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-xl transition hover:scale-105 focus-visible:ring-2 focus-visible:ring-offset-2 lg:hidden"
             onClick={() => setMobileAddOpen(true)}
@@ -585,7 +585,7 @@ const App = () => {
             <Plus className="size-6" />
           </Button>
           <Dialog open={mobileAddOpen} onOpenChange={setMobileAddOpen}>
-            <DialogContent className="p-2 border-0 sm:max-w-[420px] bg-transparent sm:shadow-none">
+            <DialogContent className="px-4 border-0 sm:max-w-[420px] bg-transparent sm:shadow-none">
               <AddTask
                 className="w-full space-y-4 rounded-3xl border bg-card p-6 shadow-lg"
                 toggleTheme={toggleTheme}
@@ -602,11 +602,11 @@ const App = () => {
       <Dialog open={deleteDialogOpen} onOpenChange={handleDeleteDialogChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Task</DialogTitle>
+            <DialogTitle>Delete Post</DialogTitle>
             <DialogDescription>
               This action cannot be undone. Are you sure you want to delete{" "}
               <span className="font-semibold">
-                {taskToDelete ? `"${taskToDelete.title}"` : "this task"}
+                {taskToDelete ? `"${taskToDelete.title}"` : "this post"}
               </span>
               ?
             </DialogDescription>
@@ -639,8 +639,8 @@ const App = () => {
       <Dialog open={openEdit} onOpenChange={handleEditDialogChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Task</DialogTitle>
-            <DialogDescription>Update the details of your task.</DialogDescription>
+            <DialogTitle>Edit Post</DialogTitle>
+            <DialogDescription>Update the details of your post.</DialogDescription>
           </DialogHeader>
           <Form {...editForm}>
             <form onSubmit={editForm.handleSubmit(onUpdate)} className="space-y-4">
@@ -677,7 +677,7 @@ const App = () => {
                               </div>
                               <img
                                 src={displayImage}
-                                alt="Task"
+                                alt="Post"
                                 className="h-56 w-full rounded-md border object-cover"
                               />
                             </div>
@@ -710,7 +710,7 @@ const App = () => {
                     <FormControl>
                       <Input
                         className="overflow-x-auto text-ellipsis"
-                        placeholder="Task Title"
+                        placeholder="Post Title"
                         autoComplete="off"
                         {...field}
                       />
@@ -728,7 +728,7 @@ const App = () => {
                     <FormControl>
                       <Textarea
                         className="resize-none overflow-y-auto break-all"
-                        placeholder="Task Description (optional)"
+                        placeholder="Post Content (optional)"
                         rows={4}
                         {...field}
                       />
