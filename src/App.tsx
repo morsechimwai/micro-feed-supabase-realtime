@@ -1,5 +1,5 @@
 // React
-import { useEffect, useState } from "react";
+import { type ChangeEvent, useEffect, useState } from "react";
 
 // UI Components
 import Auth from "./components/Auth";
@@ -29,6 +29,14 @@ import z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Spinner } from "./components/ui/spinner";
+import {
+  MAX_IMAGE_FILE_SIZE_BYTES,
+  TASK_IMAGES_BUCKET,
+  composeImageReference,
+  createStoragePath,
+  isFile,
+  parseImageReference,
+} from "./lib/storage";
 
 // Theme Management
 const THEME_STORAGE_KEY = "theme-preference";
@@ -36,6 +44,8 @@ const THEME_STORAGE_KEY = "theme-preference";
 const taskSchema = z.object({
   title: z.string().min(1, "Title is required").max(100, "Title is too long"),
   description: z.string().max(500, "Description is too long").optional(),
+  image_url: z.string().nullable().optional(),
+  image_file: z.any().nullable().optional(),
 });
 
 const App = () => {
@@ -49,16 +59,101 @@ const App = () => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+  const [editPreview, setEditPreview] = useState<string | null>(null);
+  const [editUploading, setEditUploading] = useState(false);
 
   const editForm = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
       title: "",
       description: "",
+      image_url: null,
+      image_file: null,
     },
     mode: "onSubmit",
     reValidateMode: "onChange",
   });
+
+  const editImageValue = editForm.watch("image_url");
+
+  useEffect(() => {
+    return () => {
+      if (editPreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(editPreview);
+      }
+    };
+  }, [editPreview]);
+
+  const resetEditPreview = () => {
+    if (editPreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(editPreview);
+    }
+    setEditPreview(null);
+  };
+
+  const clearEditFileInput = () => {
+    const input = document.querySelector('input[name="image_file"]') as HTMLInputElement | null;
+    if (input) {
+      input.value = "";
+    }
+  };
+
+  const handleEditFileChange = (
+    event: ChangeEvent<HTMLInputElement>,
+    formOnChange: (value: File | null) => void
+  ) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      resetEditPreview();
+      formOnChange(null);
+      editForm.setValue("image_file", null);
+      editForm.clearErrors("image_file");
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      resetEditPreview();
+      formOnChange(null);
+      editForm.setError("image_file", { type: "manual", message: "Only image files are allowed" });
+      event.target.value = "";
+      clearEditFileInput();
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_FILE_SIZE_BYTES) {
+      resetEditPreview();
+      formOnChange(null);
+      editForm.setError("image_file", { type: "manual", message: "File size must be under 2MB" });
+      event.target.value = "";
+      clearEditFileInput();
+      return;
+    }
+
+    editForm.clearErrors("image_file");
+    resetEditPreview();
+    const objectUrl = URL.createObjectURL(file);
+    setEditPreview(objectUrl);
+    editForm.setValue("image_url", editingTask?.image_url ?? null, { shouldDirty: true });
+    formOnChange(file);
+  };
+
+  const handleRemoveEditImage = (formOnChange: (value: File | null) => void) => {
+    resetEditPreview();
+    formOnChange(null);
+    editForm.setValue("image_file", null);
+    editForm.setValue("image_url", null, { shouldDirty: true });
+    editForm.clearErrors("image_file");
+    clearEditFileInput();
+  };
+
+  const resolvePublicUrlFromPath = (path: string | null) => {
+    if (!path) {
+      return null;
+    }
+    const { data } = supabase.storage.from(TASK_IMAGES_BUCKET).getPublicUrl(path);
+    return data.publicUrl ?? null;
+  };
 
   useEffect(() => {
     const loadSession = async () => {
@@ -146,7 +241,7 @@ const App = () => {
     };
   }, []);
 
-  const handleAddTask = async (task: Pick<Task, "title" | "description">) => {
+  const handleAddTask = async (task: Pick<Task, "title" | "description" | "image_url">) => {
     if (!session) {
       return;
     }
@@ -159,6 +254,7 @@ const App = () => {
           title: task.title,
           description: task.description ?? "",
           email: session.user.email,
+          image_url: task.image_url ?? null,
         })
         .select()
         .single();
@@ -174,10 +270,26 @@ const App = () => {
     }
   };
 
-  const handleDeleteTask = async (id: number) => {
-    setDeletingId(id);
+  const handleDeleteTask = async (task: Task) => {
+    setDeletingId(task.id);
     try {
-      const { error } = await supabase.from("tasks").delete().eq("id", id).select().single();
+      const reference = parseImageReference(task.image_url);
+      if (reference.path) {
+        const { data, error: storageError } = await supabase.storage
+          .from(TASK_IMAGES_BUCKET)
+          .remove([reference.path]);
+
+        if (storageError) {
+          console.error("Error deleting image from storage:", storageError.message);
+          return;
+        }
+
+        if (data) {
+          console.log("Deleted image from storage:", data);
+        }
+      }
+
+      const { error } = await supabase.from("tasks").delete().eq("id", task.id).select().single();
 
       if (error) {
         console.error("Error deleting task:", error.message);
@@ -190,7 +302,10 @@ const App = () => {
     }
   };
 
-  const handleUpdateTask = async (id: number, updates: Pick<Task, "title" | "description">) => {
+  const handleUpdateTask = async (
+    id: number,
+    updates: Pick<Task, "title" | "description" | "image_url">
+  ) => {
     setUpdatingId(id);
     try {
       const { error } = await supabase.from("tasks").update(updates).eq("id", id).select().single();
@@ -207,10 +322,19 @@ const App = () => {
   };
 
   const handleEditTask = (task: Task) => {
+    resetEditPreview();
+    clearEditFileInput();
     setEditingTask(task);
+
+    const reference = parseImageReference(task.image_url);
+    const currentUrl = reference.publicUrl ?? resolvePublicUrlFromPath(reference.path);
+    setEditPreview(currentUrl);
+
     editForm.reset({
       title: task.title,
       description: task.description ?? "",
+      image_url: reference.raw,
+      image_file: null,
     });
     setOpenEdit(true);
   };
@@ -218,10 +342,14 @@ const App = () => {
   const handleEditDialogChange = (open: boolean) => {
     setOpenEdit(open);
     if (!open) {
+      resetEditPreview();
+      clearEditFileInput();
       setEditingTask(null);
       editForm.reset({
         title: "",
         description: "",
+        image_url: null,
+        image_file: null,
       });
     }
   };
@@ -243,7 +371,7 @@ const App = () => {
       return;
     }
 
-    await handleDeleteTask(taskToDelete.id);
+    await handleDeleteTask(taskToDelete);
     handleDeleteDialogChange(false);
   };
 
@@ -299,12 +427,53 @@ const App = () => {
       return;
     }
 
-    await handleUpdateTask(editingTask.id, {
-      title: values.title,
-      description: values.description ?? "",
-    });
+    try {
+      setEditUploading(true);
+      let nextImageReference = editingTask.image_url ?? null;
+      const maybeFile = values.image_file;
+      const existingReference = parseImageReference(editingTask.image_url);
 
-    handleEditDialogChange(false);
+      if (isFile(maybeFile)) {
+        const targetPath = existingReference.path ?? createStoragePath(maybeFile.name);
+        const { error } = await supabase.storage
+          .from(TASK_IMAGES_BUCKET)
+          .upload(targetPath, maybeFile, {
+            cacheControl: "3600",
+            upsert: true,
+          });
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        const { data } = supabase.storage.from(TASK_IMAGES_BUCKET).getPublicUrl(targetPath);
+        nextImageReference = composeImageReference(targetPath, data.publicUrl);
+      } else if (!values.image_url && existingReference.path) {
+        const { error: storageError } = await supabase.storage
+          .from(TASK_IMAGES_BUCKET)
+          .remove([existingReference.path]);
+
+        if (storageError) {
+          throw new Error(storageError.message);
+        }
+
+        nextImageReference = null;
+      }
+
+      await handleUpdateTask(editingTask.id, {
+        title: values.title,
+        description: values.description ?? "",
+        image_url: nextImageReference,
+      });
+
+      handleEditDialogChange(false);
+    } catch (error) {
+      console.error("Error updating task:", error);
+      const message = error instanceof Error ? error.message : "Unable to update task";
+      editForm.setError("image_file", { type: "manual", message });
+    } finally {
+      setEditUploading(false);
+    }
   };
 
   return (
@@ -313,7 +482,7 @@ const App = () => {
         <div className="container mx-auto px-4 py-10">
           <div className="grid gap-6 lg:grid-cols-[1fr_minmax(0,450px)]">
             <TaskList
-              className="w-full mx-auto max-w-3xl rounded-3xl border bg-card p-6 shadow-lg transition-colors lg:mx-0 lg:max-w-none"
+              className="w-full mx-auto max-w-3xl transition-colors"
               tasks={tasks}
               session={session}
               fetching={fetching}
@@ -322,7 +491,7 @@ const App = () => {
               onDeleteTask={handleDeleteRequest}
               onEditTask={handleEditTask}
             />
-            <div className="space-y-6 lg:sticky lg:top-10 lg:h-fit lg:max-h-[calc(100vh-5rem)]">
+            <div className="space-y-6 lg:sticky lg:top-10 lg:h-fit lg:min-h-[calc(100vh-5rem)]">
               {session ? (
                 <AddTask
                   className="w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors mx-auto lg:mx-0 lg:max-w-none"
@@ -420,11 +589,74 @@ const App = () => {
             <form onSubmit={editForm.handleSubmit(onUpdate)} className="space-y-4">
               <FormField
                 control={editForm.control}
+                name="image_file"
+                render={({ field: { onBlur, name, onChange, ref }, fieldState }) => {
+                  const reference = parseImageReference(
+                    typeof editImageValue === "string"
+                      ? editImageValue
+                      : (editingTask?.image_url ?? null)
+                  );
+                  const displayImage =
+                    editPreview ?? reference.publicUrl ?? resolvePublicUrlFromPath(reference.path);
+
+                  return (
+                    <FormItem>
+                      <FormControl>
+                        <div className="flex flex-col gap-2">
+                          {displayImage ? (
+                            <div className="relative">
+                              <div className="absolute left-0 bottom-1 flex w-full items-center justify-between gap-2 px-4">
+                                <span className="text-sm text-muted-foreground">
+                                  {editPreview ? "Image Preview" : "Current Image"}
+                                </span>
+                                <Button
+                                  type="button"
+                                  variant="link"
+                                  className="p-0 text-sm text-red-500"
+                                  onClick={() => handleRemoveEditImage(onChange)}
+                                >
+                                  Remove
+                                </Button>
+                              </div>
+                              <img
+                                src={displayImage}
+                                alt="Task"
+                                className="h-56 w-full rounded-md border object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                              No image selected for this task.
+                            </div>
+                          )}
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            name={name}
+                            onBlur={onBlur}
+                            ref={ref}
+                            onChange={(event) => handleEditFileChange(event, onChange)}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage>{fieldState.error?.message}</FormMessage>
+                    </FormItem>
+                  );
+                }}
+              />
+
+              <FormField
+                control={editForm.control}
                 name="title"
                 render={({ field, fieldState }) => (
                   <FormItem>
                     <FormControl>
-                      <Input placeholder="Task Title" autoComplete="off" {...field} />
+                      <Input
+                        className="overflow-x-auto text-ellipsis"
+                        placeholder="Task Title"
+                        autoComplete="off"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage>{fieldState.error?.message}</FormMessage>
                   </FormItem>
@@ -437,7 +669,12 @@ const App = () => {
                 render={({ field, fieldState }) => (
                   <FormItem>
                     <FormControl>
-                      <Textarea placeholder="Task Description (optional)" rows={4} {...field} />
+                      <Textarea
+                        className="resize-none overflow-y-auto break-all"
+                        placeholder="Task Description (optional)"
+                        rows={4}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage>{fieldState.error?.message}</FormMessage>
                   </FormItem>
@@ -450,11 +687,14 @@ const App = () => {
                     Cancel
                   </Button>
                 </DialogClose>
-                <Button type="submit" disabled={!editingTask || updatingId === editingTask.id}>
-                  {updatingId === editingTask?.id ? (
+                <Button
+                  type="submit"
+                  disabled={!editingTask || updatingId === editingTask?.id || editUploading}
+                >
+                  {editUploading || updatingId === editingTask?.id ? (
                     <>
                       <Spinner className="mr-2" />
-                      Saving...
+                      {editUploading ? "Updating image..." : "Saving..."}
                     </>
                   ) : (
                     "Save Changes"

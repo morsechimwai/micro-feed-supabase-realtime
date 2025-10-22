@@ -34,15 +34,15 @@ const TaskList = ({
       <div className={`${className}`}>
         {fetching ? (
           <div className="space-y-4">
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-96 w-full rounded-3xl border" />
+            <Skeleton className="h-96 w-full rounded-3xl border" />
+            <Skeleton className="h-96 w-full rounded-3xl border" />
+            <Skeleton className="h-96 w-full rounded-3xl border" />
           </div>
         ) : tasks.length === 0 ? (
           <p className="mt-2 text-sm text-muted-foreground">No tasks available.</p>
         ) : (
-          <ul className="mt-2">
+          <ul className="space-y-4">
             {tasks
               .map((task) => (
                 <TaskItem
