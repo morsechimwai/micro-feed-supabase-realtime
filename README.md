@@ -1,37 +1,83 @@
 # MicroFeed
 
-เปิดพื้นที่ micropost แบบโอเพ่นซอร์สสำหรับทีมที่อยากสื่อสารไอเดียไว ๆ เหมือนทวิต — โพสต์สั้น, แนบภาพ, แชร์แบบเรียลไทม์ และควบคุมข้อมูลของคุณเองได้ทั้งหมด
+MicroFeed is an indie-friendly, open-source micropost platform for teams that want to broadcast short updates, visuals, and ideas in real time while retaining full custody of their data. Deploy it under your own Supabase project, tweak the UI, and ship an internal or community feed in a weekend.
 
-## ใช้ MicroFeed ทำอะไรได้บ้าง
-- ส่ง MicroPost ได้ทันที: พิมพ์, แนบภาพ, กดเผยแพร่แล้วทุกคนเห็นพร้อมกัน
-- แก้ไข/ลบ MicroPost ย้อนหลังได้ง่าย ๆ พร้อม versioned URL ป้องกันภาพเก่าแคชค้าง
-- Dark / Light Theme พร้อมจำค่าบนอุปกรณ์ของผู้ใช้
-- รองรับมือถือเต็มรูปแบบ: หน้า feed เต็มจอ + ปุ่มลอย “New Post” เปิดฟอร์มใน dialog
-- เชื่อมกับ Supabase Realtime & Auth สำหรับทีมที่ต้องการเข้าใช้งานแบบมีสิทธิ์
+## Why product teams grab MicroFeed
+- **Post instantly** – compose, attach an image, and hit publish; every client receives the update through Supabase Realtime.
+- **Edit or retire gracefully** – update copy or swap images later; cache-busted URLs make sure nobody sees stale files.
+- **Dark & light themes out of the box** – per-user theme preferences persist across sessions.
+- **Mobile-first feed** – full-screen timeline with a floating "New Post" button that opens a dialog on phones.
+- **Auth that respects roles** – Supabase Auth gates creation, edits, and deletions to signed-in members.
 
-## แนวคิดเรื่องข้อมูลส่วนบุคคล (PDPA)
-- คุณเป็นเจ้าของข้อมูล 100%: MicroFeed เก็บข้อมูลบน Supabase instance ของคุณเอง
-- โพสต์และไฟล์ภาพอยู่ใน bucket ส่วนตัว ปรับนโยบายได้เองตามมาตรฐาน PDPA/GDPR
-- สามารถลบ MicroPost พร้อมไฟล์แนบได้ในคลิกเดียว หากผู้ใช้ร้องขอการลบข้อมูล
-- ไม่มีการส่งข้อมูลไปยังเซิร์ฟเวอร์อื่น—ทุกอย่างอยู่ในบัญชี Supabase ของคุณ
+## Data ownership & compliance (PDPA-ready)
+- **You control the stack** – all posts and assets live in your Supabase project; no third-party data brokers involved.
+- **Private storage buckets** – images sit in a dedicated bucket with configurable Row-Level Security policies.
+- **Right-to-erasure ready** – removing a post cascades into deleting its attachment, satisfying PDPA/GDPR deletion requests.
+- **Auditability** – because Supabase logs every change, you can trace who published or modified content.
 
-## เอาไปใช้ยังไงดี
-- โครงการโอเพ่นซอร์ส ใช้งานได้ฟรี ปรับแต่ง UI / workflow / policy ได้เต็มที่
-- เหมาะสำหรับ internal micropost hub, community bulletin, live coverage หรือ event feed
-- แยกโค้ดส่วน UI/Theme ได้ง่าย ใช้ Tailwind + Shadcn UI พร้อมระบบฟอร์มด้วย React Hook Form
-- รองรับการต่อยอด เช่น เพิ่ม reactions, mention, หรือเชื่อมกับระบบ Slack/Teams
+## Quick start
+1. Fork or clone the repository.
+2. Spin up a Supabase project (enable Auth + Storage).
+3. Provision a `posts` table and media bucket – see `/supabase/schema.sql` for a starting point.
+4. Set environment variables such as `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY`.
+5. Install dependencies and run locally:
+   ```bash
+   npm install
+   npm run dev
+   ```
 
-## เริ่มต้นอย่างรวดเร็ว
-1. Fork หรือ clone โปรเจกต์นี้
-2. สร้างโปรเจกต์ Supabase (เปิด Auth + Storage)
-3. ตั้งค่าตาราง `posts` และ bucket เก็บภาพ (ตัวอย่าง schema อยู่ในไฟล์ `/supabase/schema.sql`)
-4. เติมค่าตัวแปรแวดล้อม เช่น `VITE_SUPABASE_URL`, `VITE_SUPABASE_KEY`
-5. `npm install && npm run dev`
+> Prefer a one-click path? Use Supabase or Vercel deploy buttons to bootstrap your instance with minimal setup.
 
-> ต้องการลดขั้นตอน? ใช้ Deploy Buttons ของ Supabase หรือ Vercel เพื่อสปินโปรเจกต์ให้ทีมได้ในไม่กี่คลิก
+## Database & Storage RLS
+Turn on Row-Level Security so only authenticated members can create and maintain their own microposts and media.
 
-## คอนทริบิวต์ & ใบอนุญาต
-- Pull Request / Issue / Feature Request ยินดีเสมอ
-- ไลเซนส์ MIT: นำไปใช้ต่อยอดเชิงพาณิชย์หรือปรับแต่งใช้ภายในองค์กรได้อิสระ
+```sql
+-- Enable RLS on the posts table
+alter table public.posts enable row level security;
 
-สร้าง MicroFeed ที่ควบคุมได้เอง แล้วปล่อยให้ทีมคุณแชร์ไอเดียได้อย่างเสรี ✨
+create policy "Select own or team posts"
+  on public.posts for select
+  using (auth.uid() is not null);
+
+create policy "Insert new posts"
+  on public.posts for insert
+  with check (auth.uid() is not null);
+
+create policy "Update own posts"
+  on public.posts for update
+  using (auth.jwt() ->> 'email' = email);
+
+create policy "Delete own posts"
+  on public.posts for delete
+  using (auth.jwt() ->> 'email' = email);
+```
+
+For the storage bucket (for example, `posts-images`), keep it private and allow authenticated members to manage only their uploads:
+
+```sql
+create policy "Public read"
+  on storage.objects for select
+  using (bucket_id = 'posts-images');
+
+create policy "Authenticated insert"
+  on storage.objects for insert
+  with check (bucket_id = 'posts-images' and auth.role() = 'authenticated');
+
+create policy "Authenticated update"
+  on storage.objects for update
+  using (bucket_id = 'posts-images' and auth.role() = 'authenticated');
+
+create policy "Authenticated delete"
+  on storage.objects for delete
+  using (bucket_id = 'posts-images' and auth.role() = 'authenticated');
+```
+
+## Customize & extend
+- Tailwind CSS + shadcn/ui make theming and layout changes straightforward.
+- React Hook Form + Zod handle validation; drop in your own field rules or extend the schema.
+- Ready for add-ons: reactions, mentions, Slack/Teams relays, scheduled posts—wire them up via Supabase functions or serverless hooks.
+
+## Contributing & license
+Pull requests, issues, and feature ideas are welcome. MicroFeed ships under the MIT License, so you can adapt it for commercial products, internal tools, or SaaS offerings without friction.
+
+Own your feed. Let your team share updates on your terms.
