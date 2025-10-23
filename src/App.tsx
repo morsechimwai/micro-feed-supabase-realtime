@@ -406,13 +406,16 @@ export default function App() {
     clearEditFileInput();
   };
 
-  const handleAddPost = async (post: Pick<Post, "title" | "description" | "image_url">) => {
+  const handleAddPost = async (
+    post: Pick<Post, "title" | "description" | "image_url">
+  ): Promise<boolean> => {
     if (!session) {
-      return;
+      return false;
     }
 
     setAdding(true);
     const toastId = toast.loading("Adding post...");
+    let isSuccessful = false;
     try {
       const { error } = await supabase
         .from("posts")
@@ -428,15 +431,19 @@ export default function App() {
       if (error) {
         console.error("Error adding post:", error.message);
         toast.error("Error adding post. Please try again.", { id: toastId });
-        return;
+        return false;
       }
+
+      toast.success("Post added successfully!", { id: toastId });
+      isSuccessful = true;
     } catch (error) {
       console.error("Unexpected error adding post:", error);
       toast.error("Unexpected error adding post. Please try again.", { id: toastId });
     } finally {
       setAdding(false);
-      toast.success("Post added successfully!", { id: toastId });
     }
+
+    return isSuccessful;
   };
 
   const onUpdate = async (values: z.infer<typeof postSchema>) => {
@@ -514,12 +521,13 @@ export default function App() {
         toast.error("Error updating post. Please try again.", { id: toastId });
         return;
       }
+
+      toast.success("Post updated successfully!", { id: toastId });
     } catch (error) {
       console.error("Unexpected error updating post:", error);
       toast.error("Unexpected error updating post. Please try again.", { id: toastId });
     } finally {
       setUpdatingId(null);
-      toast.success("Post updated successfully!", { id: toastId });
     }
   };
 
@@ -586,12 +594,13 @@ export default function App() {
         console.error("Error deleting post:", error.message);
         return;
       }
+
+      toast.success("Post deleted successfully!", { id: toastId });
     } catch (error) {
       toast.error("Unexpected error deleting post. Please try again.", { id: toastId });
       console.error("Unexpected error deleting post:", error);
     } finally {
       setDeletingId(null);
-      toast.success("Post deleted successfully!", { id: toastId });
     }
   };
 
@@ -623,7 +632,7 @@ export default function App() {
       <div className="min-h-screen text-foreground transition-colors">
         <div className="container mx-auto px-4 py-10">
           <div className="grid gap-6 lg:grid-cols-[1fr_minmax(0,450px)]">
-            <div className="space-y-6 relative">
+            <div className="space-y-4 relative">
               {!session ? (
                 <Auth
                   className="w-full sticky z-10 -top-5 rounded-3xl border bg-card p-6 shadow-lg transition-colors mx-auto lg:hidden"
@@ -645,7 +654,7 @@ export default function App() {
               />
             </div>
 
-            <div className="hidden space-y-6 lg:sticky lg:top-10 lg:block lg:h-fit lg:min-h-[calc(100vh-5rem)]">
+            <div className="hidden space-y-4 lg:sticky lg:top-10 lg:block lg:h-fit lg:min-h-[calc(100vh-5rem)]">
               {session ? (
                 <>
                   <Profile
@@ -721,7 +730,7 @@ export default function App() {
                 session={session}
               />
               <AddPost
-                className="w-full space-y-4 rounded-3xl border bg-card p-6 shadow-lg"
+                className="mx-auto w-full max-w-md space-y-4 rounded-3xl border bg-card p-6 shadow-lg"
                 adding={adding}
                 onAddPost={handleAddPost}
                 onSubmitted={() => setMobileAddOpen(false)}

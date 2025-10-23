@@ -449,7 +449,7 @@ export default function Profile({ className, toggleTheme, theme, session }: Prof
           <AvatarFallback className="font-bold text-3xl">{displayFallback}</AvatarFallback>
         </Avatar>
         <div className="ml-4">
-          <div className="flex flex-row items-center mb-1">
+          <div className="flex flex-row items-center">
             <h3 className="text-lg font-medium text-card-foreground">{displayName}</h3>
             <Button
               variant="link"
@@ -462,11 +462,11 @@ export default function Profile({ className, toggleTheme, theme, session }: Prof
             </Button>
           </div>
           <div className="flex flex-row items-center">
-            <p className="text-sm text-card-foreground/70">{displayBio}</p>
-          </div>
-          <div className="flex flex-row items-center mt-2">
             <Mail className="inline-block size-4 text-card-foreground/70" />
             <p className="ml-1 text-sm text-card-foreground/70">{session?.user.email}</p>
+          </div>
+          <div className="flex flex-row items-center mt-2">
+            <p className="text-sm text-card-foreground/70">{displayBio}</p>
           </div>
         </div>
       </div>
