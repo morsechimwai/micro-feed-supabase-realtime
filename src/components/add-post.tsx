@@ -10,10 +10,9 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from "./ui/form";
 import { toast } from "sonner";
 
 // Icons
-import { LogOut, MessageCircleMore, MoonStar, Plus, Sun } from "lucide-react";
+import { Plus } from "lucide-react";
 
 // Types
-import type { ThemeMode } from "@/types/theme";
 import type { Post } from "@/types/post";
 
 // Form and Validation
@@ -27,7 +26,7 @@ import { supabase } from "@/supabase-client";
 // Storage Utilities
 import {
   MAX_IMAGE_FILE_SIZE_BYTES,
-  STORAGE_BUCKET,
+  POSTS_STORAGE_BUCKET,
   composeImageReference,
   createStoragePath,
   isFile,
@@ -43,21 +42,12 @@ const postSchema = z.object({
 
 interface AddPostProps {
   className?: string;
-  toggleTheme: () => void;
-  theme: ThemeMode;
   adding: boolean;
   onAddPost: (post: Pick<Post, "title" | "description" | "image_url">) => Promise<void>;
   onSubmitted?: () => void;
 }
 
-export default function AddPost({
-  className,
-  toggleTheme,
-  theme,
-  adding,
-  onAddPost,
-  onSubmitted,
-}: AddPostProps) {
+export default function AddPost({ className, adding, onAddPost, onSubmitted }: AddPostProps) {
   // React Hook
   const form = useForm<z.infer<typeof postSchema>>({
     resolver: zodResolver(postSchema),
@@ -71,7 +61,7 @@ export default function AddPost({
   });
 
   // Component State
-  const [logouting, setLogouting] = useState(false);
+
   const [preview, setPreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
@@ -104,25 +94,6 @@ export default function AddPost({
       setUploadingImage(false);
       toast.success("Post added successfully!");
     }
-  };
-
-  const handleLogout = async () => {
-    setLogouting(true);
-    toast.loading("Signing out...");
-    setTimeout(async () => {
-      toast.dismiss();
-
-      try {
-        await supabase.auth.signOut();
-      } catch (error) {
-        setLogouting(false);
-        console.error("Error signing out:", error);
-        toast.error("Error signing out. Please try again.");
-        return;
-      } finally {
-        setLogouting(false);
-      }
-    }, 2000);
   };
 
   const handleChangeFile = (
@@ -164,7 +135,7 @@ export default function AddPost({
   const uploadFile = async (file: File) => {
     console.log("Uploading file:", file);
     const path = createStoragePath(file.name);
-    const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, file, {
+    const { error } = await supabase.storage.from(POSTS_STORAGE_BUCKET).upload(path, file, {
       cacheControl: "3600",
       upsert: false,
     });
@@ -173,7 +144,7 @@ export default function AddPost({
       throw new Error(error.message);
     }
 
-    const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+    const { data } = supabase.storage.from(POSTS_STORAGE_BUCKET).getPublicUrl(path);
     if (!data.publicUrl) {
       throw new Error("Unable to generate public URL for uploaded image");
     }
@@ -197,30 +168,11 @@ export default function AddPost({
     };
   }, [preview]);
 
-  // Theme icon and label
-  const themeIcon = theme === "dark" ? <Sun className="size-5" /> : <MoonStar className="size-5" />;
-  const themeLabel = theme === "dark" ? "Switch to light theme" : "Switch to dark theme";
-
   // Watch title value for enabling/disabling submit button
   const titleValue = form.watch("title");
 
   return (
     <div className={`${className}`}>
-      <header className="flex flex-wrap items-start justify-between gap-3 sm:items-center">
-        <div className="flex flex-row gap-2">
-          <Button aria-label="Log Out" onClick={handleLogout} size="icon" variant="destructive">
-            {logouting ? <Spinner /> : <LogOut />}
-          </Button>
-          <Button aria-label={themeLabel} onClick={toggleTheme} size="icon" variant="outline">
-            {themeIcon}
-          </Button>
-        </div>
-        <h2 className="flex items-center text-xl font-semibold text-card-foreground">
-          <MessageCircleMore />
-          <span className="ml-2">MicroFeed</span>
-        </h2>
-      </header>
-
       <div className="mt-4 space-y-2">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -277,7 +229,7 @@ export default function AddPost({
               render={({ field, fieldState }) => (
                 <FormItem>
                   <FormControl>
-                    <Input placeholder="Post Title" autoComplete="off" {...field} />
+                    <Input placeholder="Post Title" autoComplete="off" maxLength={100} {...field} />
                   </FormControl>
                   <FormMessage>{fieldState.error?.message}</FormMessage>
                 </FormItem>
@@ -294,6 +246,7 @@ export default function AddPost({
                       className="max-h-60 resize-y"
                       placeholder="Post Content (optional)"
                       rows={4}
+                      maxLength={500}
                       {...field}
                     />
                   </FormControl>

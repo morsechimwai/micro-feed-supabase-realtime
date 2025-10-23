@@ -1,8 +1,9 @@
 // React
-import { type ChangeEvent, useEffect, useState } from "react";
+import { type ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 
 // UI Components
 import Auth from "./components/auth";
+import Profile from "./components/profile";
 import AddPost from "./components/add-post";
 import PostList from "./components/post-list";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "./components/ui/form";
@@ -26,6 +27,7 @@ import { Plus } from "lucide-react";
 // Types
 import type { ThemeMode } from "./types/theme";
 import type { Post } from "./types/post";
+import type { User } from "./types/user";
 
 // Supabase Client
 import type { Session } from "@supabase/supabase-js";
@@ -39,7 +41,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 // Storage Utilities
 import {
   MAX_IMAGE_FILE_SIZE_BYTES,
-  STORAGE_BUCKET,
+  POSTS_STORAGE_BUCKET,
   composeImageReference,
   createStoragePath,
   isFile,
@@ -76,6 +78,8 @@ export default function App() {
   // State Management
   const [session, setSession] = useState<Session | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [profilesByEmail, setProfilesByEmail] = useState<Record<string, User>>({});
+  const profilesRef = useRef<Record<string, User>>({});
   const [fetching, setFetching] = useState(false);
   const [adding, setAdding] = useState(false);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
@@ -99,6 +103,74 @@ export default function App() {
 
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
+
+  const mergeProfiles = useCallback((users: User[] | null | undefined) => {
+    if (!users?.length) {
+      return;
+    }
+
+    setProfilesByEmail((previous) => {
+      const next = { ...previous };
+      for (const user of users) {
+        const normalizedEmail =
+          typeof user?.email === "string" ? user.email.trim().toLowerCase() : null;
+        if (normalizedEmail) {
+          next[normalizedEmail] = user;
+        }
+      }
+      profilesRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const ensureProfiles = useCallback(
+    async (emails: string[]) => {
+      const uniqueEmails = Array.from(
+        new Set(
+          emails
+            .filter(
+              (email): email is string => typeof email === "string" && email.trim().length > 0
+            )
+            .map((email) => email.trim().toLowerCase())
+        )
+      );
+
+      if (uniqueEmails.length === 0) {
+        return;
+      }
+
+      const missing = uniqueEmails.filter((email) => !profilesRef.current[email]);
+      if (missing.length === 0) {
+        return;
+      }
+
+      const { data, error } = await supabase.from("users").select("*").in("email", missing);
+
+      if (error) {
+        console.error("Error fetching user profiles:", error.message);
+        return;
+      }
+
+      mergeProfiles(data);
+    },
+    [mergeProfiles]
+  );
+
+  const removeProfile = useCallback((email: string | null | undefined) => {
+    if (!email) {
+      return;
+    }
+    const normalized = email.trim().toLowerCase();
+    setProfilesByEmail((previous) => {
+      if (!previous[normalized]) {
+        return previous;
+      }
+      const next = { ...previous };
+      delete next[normalized];
+      profilesRef.current = next;
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -183,7 +255,9 @@ export default function App() {
           return;
         }
 
-        setPosts(data || []);
+        const fetchedPosts = data ?? [];
+        setPosts(fetchedPosts);
+        void ensureProfiles(fetchedPosts.map((post) => post.email));
       } catch (error) {
         console.error("Unexpected error fetching posts:", error);
       } finally {
@@ -201,11 +275,13 @@ export default function App() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "posts" }, (payload) => {
         const newPost = payload.new as Post;
         setPosts((prev) => [...prev, newPost]);
+        void ensureProfiles([newPost.email]);
       })
       // เมื่อมีการอัปเดต post
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "posts" }, (payload) => {
         const updatedPost = payload.new as Post;
         setPosts((prev) => prev.map((post) => (post.id === updatedPost.id ? updatedPost : post)));
+        void ensureProfiles([updatedPost.email]);
       })
       // เมื่อมีการลบ post
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "posts" }, (payload) => {
@@ -222,6 +298,30 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel("users-profiles-channel")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "users" }, (payload) => {
+        const user = payload.new as User;
+        mergeProfiles([user]);
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "users" }, (payload) => {
+        const user = payload.new as User;
+        mergeProfiles([user]);
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "users" }, (payload) => {
+        const user = payload.old as User;
+        removeProfile(user?.email);
+      })
+      .subscribe((status) => {
+        console.log("Users channel status:", status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [mergeProfiles, removeProfile]);
+
   const toggleTheme = () => {
     setTheme((prev) => {
       const next = prev === "dark" ? "light" : "dark";
@@ -236,7 +336,7 @@ export default function App() {
     if (!path) {
       return null;
     }
-    const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+    const { data } = supabase.storage.from(POSTS_STORAGE_BUCKET).getPublicUrl(path);
     if (!data.publicUrl) {
       return null;
     }
@@ -354,7 +454,7 @@ export default function App() {
       if (isFile(maybeFile)) {
         const targetPath = existingReference.path ?? createStoragePath(maybeFile.name);
         const { error } = await supabase.storage
-          .from(STORAGE_BUCKET)
+          .from(POSTS_STORAGE_BUCKET)
           .upload(targetPath, maybeFile, {
             cacheControl: "3600",
             upsert: true,
@@ -364,7 +464,7 @@ export default function App() {
           throw new Error(error.message);
         }
 
-        const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(targetPath);
+        const { data } = supabase.storage.from(POSTS_STORAGE_BUCKET).getPublicUrl(targetPath);
         if (!data.publicUrl) {
           throw new Error("Unable to generate public URL for updated image");
         }
@@ -373,7 +473,7 @@ export default function App() {
         nextImageReference = composeImageReference(targetPath, versionedUrl);
       } else if (!values.image_url && existingReference.path) {
         const { error: storageError } = await supabase.storage
-          .from(STORAGE_BUCKET)
+          .from(POSTS_STORAGE_BUCKET)
           .remove([existingReference.path]);
 
         if (storageError) {
@@ -465,7 +565,7 @@ export default function App() {
         console.log("Deleting image from storage:", reference);
         console.log("Deleting image from storage at path:", reference.path);
         const { error: storageError, data } = await supabase.storage
-          .from(STORAGE_BUCKET)
+          .from(POSTS_STORAGE_BUCKET)
           .remove([reference.path]);
 
         if (storageError) {
@@ -526,7 +626,7 @@ export default function App() {
             <div className="space-y-6 relative">
               {!session ? (
                 <Auth
-                  className="w-full sticky -top-5 rounded-3xl border bg-card p-6 shadow-lg transition-colors mx-auto lg:hidden"
+                  className="w-full sticky z-10 -top-5 rounded-3xl border bg-card p-6 shadow-lg transition-colors mx-auto lg:hidden"
                   toggleTheme={toggleTheme}
                   theme={theme}
                 />
@@ -536,6 +636,7 @@ export default function App() {
                 className="w-full mx-auto max-w-4xl transition-colors"
                 posts={posts}
                 session={session}
+                profiles={profilesByEmail}
                 fetching={fetching}
                 updatingId={updatingId}
                 deletingId={deletingId}
@@ -546,13 +647,19 @@ export default function App() {
 
             <div className="hidden space-y-6 lg:sticky lg:top-10 lg:block lg:h-fit lg:min-h-[calc(100vh-5rem)]">
               {session ? (
-                <AddPost
-                  className="mx-auto w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors"
-                  toggleTheme={toggleTheme}
-                  theme={theme}
-                  adding={adding}
-                  onAddPost={handleAddPost}
-                />
+                <>
+                  <Profile
+                    className="mx-auto w-full max-w-md rounded-3xl border bg-card shadow-lg transition-colors"
+                    toggleTheme={toggleTheme}
+                    theme={theme}
+                    session={session}
+                  />
+                  <AddPost
+                    className="mx-auto w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors"
+                    adding={adding}
+                    onAddPost={handleAddPost}
+                  />
+                </>
               ) : (
                 <Auth
                   className="mx-auto w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors"
@@ -607,10 +714,14 @@ export default function App() {
           </Button>
           <Dialog open={mobileAddOpen} onOpenChange={setMobileAddOpen}>
             <DialogContent className="px-4 border-0 sm:max-w-[420px] bg-transparent sm:shadow-none">
-              <AddPost
-                className="w-full space-y-4 rounded-3xl border bg-card p-6 shadow-lg"
+              <Profile
+                className="mx-auto w-full max-w-md rounded-3xl border bg-card shadow-lg transition-colors"
                 toggleTheme={toggleTheme}
                 theme={theme}
+                session={session}
+              />
+              <AddPost
+                className="w-full space-y-4 rounded-3xl border bg-card p-6 shadow-lg"
                 adding={adding}
                 onAddPost={handleAddPost}
                 onSubmitted={() => setMobileAddOpen(false)}

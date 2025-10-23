@@ -94,11 +94,9 @@ export default function Auth({ className, toggleTheme, theme }: AuthProps) {
         }
       }, 2000);
     } else {
-      toast.loading("Signing up...");
+      const toastId = toast.loading("Signing up...");
 
       setTimeout(async () => {
-        toast.dismiss();
-
         try {
           const { error, data } = await supabase.auth.signUp({
             email: values.email,
@@ -119,6 +117,7 @@ export default function Auth({ className, toggleTheme, theme }: AuthProps) {
             toast.success(
               `Sign up successful! Please check your email: ${values.email}, to confirm your account.`,
               {
+                id: toastId,
                 duration: 10000,
               }
             );
@@ -162,7 +161,7 @@ export default function Auth({ className, toggleTheme, theme }: AuthProps) {
               render={({ field, fieldState }) => (
                 <FormItem>
                   <FormControl>
-                    <Input placeholder="Email" autoComplete="off" {...field} />
+                    <Input placeholder="Email" autoComplete="off" maxLength={100} {...field} />
                   </FormControl>
                   <FormMessage>{fieldState.error?.message}</FormMessage>
                 </FormItem>
@@ -174,7 +173,13 @@ export default function Auth({ className, toggleTheme, theme }: AuthProps) {
               render={({ field, fieldState }) => (
                 <FormItem>
                   <FormControl>
-                    <Input type="password" placeholder="Password" autoComplete="off" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="Password"
+                      autoComplete="off"
+                      maxLength={50}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage>{fieldState.error?.message}</FormMessage>
                 </FormItem>

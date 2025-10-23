@@ -15,12 +15,14 @@ import { MessageCircleOff } from "lucide-react";
 
 // Types
 import type { Post } from "@/types/post";
+import type { User } from "@/types/user";
 import type { Session } from "@supabase/supabase-js";
 
 interface PostListProps {
   className?: string;
   posts: Post[];
   session: Session | null;
+  profiles: Record<string, User>;
   fetching: boolean;
   updatingId: number | null;
   deletingId: number | null;
@@ -32,6 +34,7 @@ export default function PostList({
   className,
   posts,
   session,
+  profiles,
   fetching,
   updatingId,
   deletingId,
@@ -69,6 +72,7 @@ export default function PostList({
                   key={post.id}
                   post={post}
                   session={session}
+                  profile={profiles[post.email.trim().toLowerCase()] ?? null}
                   onDelete={() => onDeletePost(post)}
                   onEdit={onEditPost}
                   isUpdating={updatingId === post.id}
