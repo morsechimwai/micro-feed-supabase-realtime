@@ -12,25 +12,39 @@ import {
 import { EllipsisVertical, Laugh, MessageCircleMore, Pencil, Trash2 } from "lucide-react";
 
 // Types
-import type { Task } from "@/types/post";
-
-// Supabase
+import type { Post } from "@/types/post";
 import type { Session } from "@supabase/supabase-js";
-import { supabase } from "@/supabase-client";
-import { formatCreatedAt } from "@/lib/utils";
-import { TASK_IMAGES_BUCKET, parseImageReference, withCacheBuster } from "@/lib/storage";
 
-interface TaskItemProps {
-  task: Task;
+// Supabase Client
+import { supabase } from "@/supabase-client";
+
+// Storage Utilities
+import { STORAGE_BUCKET, parseImageReference, withCacheBuster } from "@/lib/storage";
+
+// Utilities
+import { formatCreatedAt } from "@/lib/utils";
+
+interface PostItemProps {
+  post: Post;
   session: Session | null;
-  onDelete?: (task: Task) => void;
-  onEdit?: (task: Task) => void;
+  onDelete?: (post: Post) => void;
+  onEdit?: (post: Post) => void;
   isUpdating?: boolean;
   isDeleting?: boolean;
 }
 
-const TaskItem = ({ task, session, onDelete, onEdit, isUpdating, isDeleting }: TaskItemProps) => {
-  const imageReference = parseImageReference(task.image_url);
+export default function PostItem({
+  post,
+  session,
+  onDelete,
+  onEdit,
+  isUpdating,
+  isDeleting,
+}: PostItemProps) {
+  // Determine the image URL to display
+  const imageReference = parseImageReference(post.image_url);
+
+  // Compute the display image URL
   const displayImage = (() => {
     if (imageReference.publicUrl) {
       return imageReference.publicUrl;
@@ -40,12 +54,12 @@ const TaskItem = ({ task, session, onDelete, onEdit, isUpdating, isDeleting }: T
       return null;
     }
 
-    const { data } = supabase.storage.from(TASK_IMAGES_BUCKET).getPublicUrl(imageReference.path);
+    const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(imageReference.path);
     if (!data.publicUrl) {
       return null;
     }
 
-    return withCacheBuster(data.publicUrl, task.created_at ?? undefined);
+    return withCacheBuster(data.publicUrl, post.created_at ?? undefined);
   })();
 
   return (
@@ -58,21 +72,21 @@ const TaskItem = ({ task, session, onDelete, onEdit, isUpdating, isDeleting }: T
                 <Laugh className="inline size-8 mr-2 mb-1 text-secondary-foreground" />
                 <div>
                   <div className="text-sm font-bold">
-                    {task.email === session?.user.email ? (
+                    {post.email === session?.user.email ? (
                       <span className="dark:text-green-500 text-green-700">My Post</span>
                     ) : (
-                      task.email
+                      post.email
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {formatCreatedAt(task.created_at)}
+                    {formatCreatedAt(post.created_at)}
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-2 sm:justify-end">
-              {session && session.user.email === task.email && (
+              {session && session.user.email === post.email && (
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-8 w-8 p-0">
@@ -80,12 +94,12 @@ const TaskItem = ({ task, session, onDelete, onEdit, isUpdating, isDeleting }: T
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onEdit?.(task)} disabled={isUpdating}>
+                    <DropdownMenuItem onClick={() => onEdit?.(post)} disabled={isUpdating}>
                       <Pencil />
                       <span>Edit</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => onDelete?.(task)} disabled={isDeleting}>
+                    <DropdownMenuItem onClick={() => onDelete?.(post)} disabled={isDeleting}>
                       <Trash2 />
                       <span>Delete</span>
                     </DropdownMenuItem>
@@ -97,16 +111,16 @@ const TaskItem = ({ task, session, onDelete, onEdit, isUpdating, isDeleting }: T
 
           <div>
             {displayImage ? (
-              <img src={displayImage} alt={task.title} className="h-84 w-full object-cover" />
+              <img src={displayImage} alt={post.title} className="h-84 w-full object-cover" />
             ) : null}
           </div>
 
           <div className="mb-2 px-4">
-            <h3 className="text-based text-secondary-foreground break-words">{task.title}</h3>
+            <h3 className="text-based text-secondary-foreground break-words">{post.title}</h3>
             <div className="flex flex-row items-center gap-1.5 mt-2">
               <MessageCircleMore className="size-3.5" />
               <p className="flex-1 text-sm text-muted-foreground whitespace-pre-wrap break-all">
-                {task.description}
+                {post.description}
               </p>
             </div>
           </div>
@@ -114,6 +128,4 @@ const TaskItem = ({ task, session, onDelete, onEdit, isUpdating, isDeleting }: T
       </li>
     </>
   );
-};
-
-export default TaskItem;
+}

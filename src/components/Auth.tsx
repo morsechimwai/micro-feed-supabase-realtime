@@ -1,15 +1,39 @@
-import { KeySquare, Loader2, MoonStar, Sun, User } from "lucide-react";
-import { Input } from "./ui/input";
+// React
 import { useState } from "react";
-import { Button } from "./ui/button";
 
+// UI Components
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+
+// Icons
+import { KeySquare, Loader2, MoonStar, Sun, User } from "lucide-react";
+
+// Libraries for form validation
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
-import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+// Supabase Client
 import { supabase } from "@/supabase-client";
+
+// Types
 import type { ThemeMode } from "@/types/theme";
+
+// Form Validation Schema
+const formSchema = z.object({
+  email: z.string().email({
+    message: "Invalid email address",
+  }),
+  password: z
+    .string()
+    .min(8, {
+      message: "Password must be at least 8 characters long",
+    })
+    .max(50, {
+      message: "Password must be at most 50 characters long",
+    }),
+});
 
 interface AuthProps {
   className?: string;
@@ -17,33 +41,8 @@ interface AuthProps {
   theme: ThemeMode;
 }
 
-const Auth = ({ className, toggleTheme, theme }: AuthProps) => {
-  // Theme icon and label
-  const themeIcon = theme === "dark" ? <Sun className="size-5" /> : <MoonStar className="size-5" />;
-  const themeLabel = theme === "dark" ? "Switch to light theme" : "Switch to dark theme";
-
-  // State to toggle between Sign In and Sign Up
-  const [action, setAction] = useState<"signIn" | "signUp">("signIn");
-
-  // State to manage submitting state
-  const [submitting, setSubmitting] = useState(false);
-
-  // Define the schema using zod
-  const formSchema = z.object({
-    email: z.string().email({
-      message: "Invalid email address",
-    }),
-    password: z
-      .string()
-      .min(8, {
-        message: "Password must be at least 8 characters long",
-      })
-      .max(50, {
-        message: "Password must be at most 50 characters long",
-      }),
-  });
-
-  // Initialize the form with react-hook-form and zod resolver
+export default function Auth({ className, toggleTheme, theme }: AuthProps) {
+  // React Hook
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -53,6 +52,10 @@ const Auth = ({ className, toggleTheme, theme }: AuthProps) => {
     mode: "onSubmit",
     reValidateMode: "onChange",
   });
+
+  // Component State
+  const [action, setAction] = useState<"signIn" | "signUp">("signIn");
+  const [submitting, setSubmitting] = useState(false);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     console.log(values);
@@ -117,6 +120,10 @@ const Auth = ({ className, toggleTheme, theme }: AuthProps) => {
       }
     }
   };
+
+  // Theme icon and label
+  const themeIcon = theme === "dark" ? <Sun className="size-5" /> : <MoonStar className="size-5" />;
+  const themeLabel = theme === "dark" ? "Switch to light theme" : "Switch to dark theme";
 
   return (
     <div className={`${className}`}>
@@ -192,6 +199,4 @@ const Auth = ({ className, toggleTheme, theme }: AuthProps) => {
       </div>
     </div>
   );
-};
-
-export default Auth;
+}

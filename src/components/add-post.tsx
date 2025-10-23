@@ -1,65 +1,65 @@
+// React
 import { type ChangeEvent, useEffect, useState } from "react";
-import { LogOut, MessageCircleMore, MoonStar, Plus, Sun } from "lucide-react";
 
+// UI Components
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import type { ThemeMode } from "@/types/theme";
-import type { Task } from "@/types/post";
 import { Spinner } from "./ui/spinner";
-import { supabase } from "@/supabase-client";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "./ui/form";
+
+// Icons
+import { LogOut, MessageCircleMore, MoonStar, Plus, Sun } from "lucide-react";
+
+// Types
+import type { ThemeMode } from "@/types/theme";
+import type { Post } from "@/types/post";
+
+// Form and Validation
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
+
+// Supabase Client
+import { supabase } from "@/supabase-client";
+
+// Storage Utilities
 import {
   MAX_IMAGE_FILE_SIZE_BYTES,
-  TASK_IMAGES_BUCKET,
+  STORAGE_BUCKET,
   composeImageReference,
   createStoragePath,
+  isFile,
   withCacheBuster,
 } from "@/lib/storage";
 
-interface AddTaskProps {
+// Form Validation Schema
+const postSchema = z.object({
+  title: z.string().min(1, "Title is required").max(100, "Title is too long"),
+  description: z.string().max(500, "Description is too long").optional(),
+  image_file: z.any().nullable().optional(),
+});
+
+interface AddPostProps {
   className?: string;
   toggleTheme: () => void;
   theme: ThemeMode;
   adding: boolean;
-  onAddTask: (task: Pick<Task, "title" | "description" | "image_url">) => Promise<void>;
+  onAddPost: (post: Pick<Post, "title" | "description" | "image_url">) => Promise<void>;
   onSubmitted?: () => void;
 }
 
-const AddTask = ({
+export default function AddPost({
   className,
   toggleTheme,
   theme,
   adding,
-  onAddTask,
+  onAddPost,
   onSubmitted,
-}: AddTaskProps) => {
-  const [logouting, setLogouting] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
-
-  useEffect(() => {
-    return () => {
-      if (preview) {
-        URL.revokeObjectURL(preview);
-      }
-    };
-  }, [preview]);
-
-  const themeIcon = theme === "dark" ? <Sun className="size-5" /> : <MoonStar className="size-5" />;
-  const themeLabel = theme === "dark" ? "Switch to light theme" : "Switch to dark theme";
-
-  const taskSchema = z.object({
-    title: z.string().min(1, "Title is required").max(100, "Title is too long"),
-    description: z.string().max(500, "Description is too long").optional(),
-    image_file: z.any().nullable().optional(),
-  });
-
-  const form = useForm<z.infer<typeof taskSchema>>({
-    resolver: zodResolver(taskSchema),
+}: AddPostProps) {
+  // React Hook
+  const form = useForm<z.infer<typeof postSchema>>({
+    resolver: zodResolver(postSchema),
     defaultValues: {
       title: "",
       description: "",
@@ -69,12 +69,49 @@ const AddTask = ({
     reValidateMode: "onChange",
   });
 
-  const titleValue = form.watch("title");
+  // Component State
+  const [logouting, setLogouting] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
-  const clearPreview = () => {
-    if (preview) {
-      URL.revokeObjectURL(preview);
-      setPreview(null);
+  const onSubmit = async (values: z.infer<typeof postSchema>) => {
+    try {
+      let imageReference: string | null = null;
+      const maybeFile = values.image_file;
+
+      if (isFile(maybeFile)) {
+        setUploadingImage(true);
+        imageReference = await uploadFile(maybeFile);
+      }
+
+      await onAddPost({
+        title: values.title,
+        description: values.description ?? "",
+        image_url: imageReference,
+      });
+
+      form.reset();
+      clearPreview();
+      form.clearErrors("image_file");
+      onSubmitted?.();
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      const message = error instanceof Error ? error.message : "Unable to upload image";
+      form.setError("image_file", { type: "manual", message });
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    setLogouting(true);
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      setLogouting(false);
+      console.error("Error signing out:", error);
+    } finally {
+      setLogouting(false);
     }
   };
 
@@ -114,12 +151,9 @@ const AddTask = ({
     formOnChange(file);
   };
 
-  const isFile = (value: unknown): value is File =>
-    typeof File !== "undefined" && value instanceof File;
-
   const uploadFile = async (file: File) => {
     const path = createStoragePath(file.name);
-    const { error } = await supabase.storage.from(TASK_IMAGES_BUCKET).upload(path, file, {
+    const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, file, {
       cacheControl: "3600",
       upsert: false,
     });
@@ -128,7 +162,7 @@ const AddTask = ({
       throw new Error(error.message);
     }
 
-    const { data } = supabase.storage.from(TASK_IMAGES_BUCKET).getPublicUrl(path);
+    const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
     if (!data.publicUrl) {
       throw new Error("Unable to generate public URL for uploaded image");
     }
@@ -137,46 +171,27 @@ const AddTask = ({
     return composeImageReference(path, versionedUrl);
   };
 
-  const onSubmit = async (values: z.infer<typeof taskSchema>) => {
-    try {
-      let imageReference: string | null = null;
-      const maybeFile = values.image_file;
+  const clearPreview = () => {
+    if (preview) {
+      URL.revokeObjectURL(preview);
+      setPreview(null);
+    }
+  };
 
-      if (isFile(maybeFile)) {
-        setUploadingImage(true);
-        imageReference = await uploadFile(maybeFile);
+  useEffect(() => {
+    return () => {
+      if (preview) {
+        URL.revokeObjectURL(preview);
       }
+    };
+  }, [preview]);
 
-      await onAddTask({
-        title: values.title,
-        description: values.description ?? "",
-        image_url: imageReference,
-      });
+  // Theme icon and label
+  const themeIcon = theme === "dark" ? <Sun className="size-5" /> : <MoonStar className="size-5" />;
+  const themeLabel = theme === "dark" ? "Switch to light theme" : "Switch to dark theme";
 
-      form.reset();
-      clearPreview();
-      form.clearErrors("image_file");
-      onSubmitted?.();
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      const message = error instanceof Error ? error.message : "Unable to upload image";
-      form.setError("image_file", { type: "manual", message });
-    } finally {
-      setUploadingImage(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    setLogouting(true);
-    try {
-      await supabase.auth.signOut();
-    } catch (error) {
-      setLogouting(false);
-      console.error("Error signing out:", error);
-    } finally {
-      setLogouting(false);
-    }
-  };
+  // Watch title value for enabling/disabling submit button
+  const titleValue = form.watch("title");
 
   return (
     <div className={`${className}`}>
@@ -298,6 +313,4 @@ const AddTask = ({
       </div>
     </div>
   );
-};
-
-export default AddTask;
+}

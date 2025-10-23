@@ -1,6 +1,6 @@
 // UI Components
+import PostItem from "./post-item";
 import { Skeleton } from "@/components/ui/skeleton";
-import TaskItem from "./PostItem";
 import {
   Empty,
   EmptyContent,
@@ -14,32 +14,30 @@ import {
 import { MessageCircleOff } from "lucide-react";
 
 // Types
-import type { Task } from "@/types/post";
-
-// Supabase
+import type { Post } from "@/types/post";
 import type { Session } from "@supabase/supabase-js";
 
-interface TaskListProps {
+interface PostListProps {
   className?: string;
-  tasks: Task[];
+  posts: Post[];
   session: Session | null;
   fetching: boolean;
   updatingId: number | null;
   deletingId: number | null;
-  onDeleteTask: (task: Task) => void;
-  onEditTask: (task: Task) => void;
+  onDeletePost: (post: Post) => void;
+  onEditPost: (post: Post) => void;
 }
 
-const TaskList = ({
+export default function PostList({
   className,
-  tasks,
+  posts,
   session,
   fetching,
   updatingId,
   deletingId,
-  onDeleteTask,
-  onEditTask,
-}: TaskListProps) => {
+  onDeletePost,
+  onEditPost,
+}: PostListProps) {
   return (
     <>
       <div className={`${className}`}>
@@ -50,7 +48,7 @@ const TaskList = ({
             <Skeleton className="h-96 w-full rounded-3xl border" />
             <Skeleton className="h-96 w-full rounded-3xl border" />
           </div>
-        ) : tasks.length === 0 ? (
+        ) : posts.length === 0 ? (
           <Empty>
             <EmptyHeader>
               <EmptyMedia variant="icon">
@@ -65,16 +63,16 @@ const TaskList = ({
           </Empty>
         ) : (
           <ul className="space-y-4">
-            {tasks
-              .map((task) => (
-                <TaskItem
-                  key={task.id}
-                  task={task}
+            {posts
+              .map((post) => (
+                <PostItem
+                  key={post.id}
+                  post={post}
                   session={session}
-                  onDelete={() => onDeleteTask(task)}
-                  onEdit={onEditTask}
-                  isUpdating={updatingId === task.id}
-                  isDeleting={deletingId === task.id}
+                  onDelete={() => onDeletePost(post)}
+                  onEdit={onEditPost}
+                  isUpdating={updatingId === post.id}
+                  isDeleting={deletingId === post.id}
                 />
               ))
               .reverse()}
@@ -83,6 +81,4 @@ const TaskList = ({
       </div>
     </>
   );
-};
-
-export default TaskList;
+}

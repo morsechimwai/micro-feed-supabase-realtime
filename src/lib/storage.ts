@@ -1,7 +1,11 @@
-export const TASK_IMAGES_BUCKET = "tasks-images";
+export const STORAGE_BUCKET = "posts-images";
+export const BUCKET_FOLDER = "posts";
 export const MAX_IMAGE_FILE_SIZE_BYTES = 2 * 1024 * 1024;
 
 const RANDOM_FALLBACK = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+export const isFile = (value: unknown): value is File =>
+  typeof File !== "undefined" && value instanceof File;
 
 export const createStoragePath = (fileName: string) => {
   const extension = fileName.split(".").pop();
@@ -9,7 +13,7 @@ export const createStoragePath = (fileName: string) => {
     typeof crypto !== "undefined" && "randomUUID" in crypto
       ? crypto.randomUUID()
       : RANDOM_FALLBACK();
-  return `tasks/${uuid}${extension ? `.${extension}` : ""}`;
+  return `{BUCKET_FOLDER}/${uuid}${extension ? `.${extension}` : ""}`;
 };
 
 export const getStoragePathFromUrl = (url: string) => {
@@ -19,7 +23,7 @@ export const getStoragePathFromUrl = (url: string) => {
 
   try {
     const parsed = new URL(url);
-    const marker = `/storage/v1/object/public/${TASK_IMAGES_BUCKET}/`;
+    const marker = `/storage/v1/object/public/${STORAGE_BUCKET}/`;
     const index = parsed.pathname.indexOf(marker);
 
     if (index !== -1) {
@@ -27,7 +31,7 @@ export const getStoragePathFromUrl = (url: string) => {
       return decodeURIComponent(path);
     }
 
-    const altMarker = `/${TASK_IMAGES_BUCKET}/`;
+    const altMarker = `/${STORAGE_BUCKET}/`;
     const altIndex = parsed.pathname.indexOf(altMarker);
 
     if (altIndex !== -1) {
@@ -38,12 +42,12 @@ export const getStoragePathFromUrl = (url: string) => {
     return null;
   } catch {
     let raw = url;
-    const marker = `/storage/v1/object/public/${TASK_IMAGES_BUCKET}/`;
+    const marker = `/storage/v1/object/public/${STORAGE_BUCKET}/`;
 
     if (raw.includes(marker)) {
       raw = raw.slice(raw.indexOf(marker) + marker.length);
     } else {
-      const altMarker = `/${TASK_IMAGES_BUCKET}/`;
+      const altMarker = `/${STORAGE_BUCKET}/`;
       if (raw.includes(altMarker)) {
         raw = raw.slice(raw.indexOf(altMarker) + altMarker.length);
       } else {
