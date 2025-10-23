@@ -78,6 +78,6 @@ create policy "Authenticated delete"
 - Ready for add-ons: reactions, mentions, Slack/Teams relays, scheduled posts—wire them up via Supabase functions or serverless hooks.
 
 ## Contributing & license
-Pull requests, issues, and feature ideas are welcome. MicroFeed ships under the MIT License, so you can adapt it for commercial products, internal tools, or SaaS offerings without friction.
+Pull requests, issues, and feature ideas are welcome. MicroFeed ships under the [MIT License](./LICENSE), so you can adapt it for commercial products, internal tools, or SaaS offerings without friction.
 
 Own your feed. Let your team share updates on your terms.
