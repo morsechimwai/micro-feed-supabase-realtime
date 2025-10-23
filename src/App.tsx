@@ -723,6 +723,7 @@ export default function App() {
           </Button>
           <Dialog open={mobileAddOpen} onOpenChange={setMobileAddOpen}>
             <DialogContent className="px-4 border-0 sm:max-w-[420px] bg-transparent sm:shadow-none">
+              <DialogTitle></DialogTitle>
               <Profile
                 className="mx-auto w-full max-w-md rounded-3xl border bg-card shadow-lg transition-colors"
                 toggleTheme={toggleTheme}
