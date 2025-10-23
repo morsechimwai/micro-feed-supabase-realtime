@@ -7,7 +7,7 @@ import { Button } from "./ui/button";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 
 // Icons
-import { Loader2, MessageCircleMore, MoonStar, Sun } from "lucide-react";
+import { Eye, EyeOff, Loader2, MessageCircleMore, MoonStar, Sun } from "lucide-react";
 
 // Libraries for form validation
 import { z } from "zod";
@@ -34,6 +34,12 @@ const formSchema = z.object({
     .max(50, {
       message: "Password must be at most 50 characters long",
     }),
+  confirm_password: z
+    .string()
+    .max(50, {
+      message: "Password must be at most 50 characters long",
+    })
+    .optional(),
 });
 
 interface AuthenicateProps {
@@ -49,6 +55,7 @@ export default function Authenicate({ className, toggleTheme, theme }: Authenica
     defaultValues: {
       email: "",
       password: "",
+      confirm_password: "",
     },
     mode: "onSubmit",
     reValidateMode: "onChange",
@@ -57,12 +64,22 @@ export default function Authenicate({ className, toggleTheme, theme }: Authenica
   // Component State
   const [action, setAction] = useState<"signIn" | "signUp">("signIn");
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const handleSwitchAction = (next: "signIn" | "signUp") => {
+    setAction(next);
+    form.clearErrors();
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+    form.setValue("confirm_password", "");
+  };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setSubmitting(true);
 
     // Simulate async operation
-    form.clearErrors("password");
+    form.clearErrors(["password", "confirm_password"]);
 
     if (action === "signIn") {
       const toastId = toast.loading("Signing in...");
@@ -99,6 +116,18 @@ export default function Authenicate({ className, toggleTheme, theme }: Authenica
 
       setTimeout(async () => {
         try {
+          const confirm =
+            form.getValues("confirm_password")?.trim() ?? "";
+          if (values.password !== confirm) {
+            form.setError("confirm_password", {
+              type: "manual",
+              message: "Passwords do not match.",
+            });
+            toast.dismiss(toastId);
+            setSubmitting(false);
+            return;
+          }
+
           const { error, data } = await supabase.auth.signUp({
             email: values.email,
             password: values.password,
@@ -110,6 +139,17 @@ export default function Authenicate({ className, toggleTheme, theme }: Authenica
               message: "Email is already in use. Please use a different email.",
             });
             toast.dismiss(toastId);
+            setSubmitting(false);
+            return;
+          }
+
+          if (!error && data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+            form.setError("email", {
+              type: "manual",
+              message: "Email is already in use. Please sign in instead.",
+            });
+            toast.dismiss(toastId);
+            setSubmitting(false);
             return;
           }
 
@@ -123,8 +163,12 @@ export default function Authenicate({ className, toggleTheme, theme }: Authenica
                 duration: 12000,
               }
             );
-            setAction("signIn");
-            form.reset();
+            handleSwitchAction("signIn");
+            form.reset({
+              email: "",
+              password: "",
+              confirm_password: "",
+            });
           }
         } catch (error) {
           console.error("Error signing up:", error);
@@ -176,18 +220,66 @@ export default function Authenicate({ className, toggleTheme, theme }: Authenica
               render={({ field, fieldState }) => (
                 <FormItem>
                   <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="Password"
-                      autoComplete="off"
-                      maxLength={50}
-                      {...field}
-                    />
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Password"
+                        autoComplete="off"
+                        maxLength={50}
+                        {...field}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </Button>
+                    </div>
                   </FormControl>
                   <FormMessage>{fieldState.error?.message}</FormMessage>
                 </FormItem>
               )}
             />
+            {action === "signUp" ? (
+              <FormField
+                control={form.control}
+                name="confirm_password"
+                render={({ field, fieldState }) => (
+                  <FormItem>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="Confirm Password"
+                          autoComplete="off"
+                          maxLength={50}
+                          {...field}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground"
+                          onClick={() => setShowConfirmPassword((prev) => !prev)}
+                          aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff className="size-4" />
+                          ) : (
+                            <Eye className="size-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage>{fieldState.error?.message}</FormMessage>
+                  </FormItem>
+                )}
+              />
+            ) : null}
             <Button className="mt-4 w-full" type="submit" disabled={submitting}>
               {submitting ? (
                 <>
@@ -207,14 +299,14 @@ export default function Authenicate({ className, toggleTheme, theme }: Authenica
         {action === "signIn" ? (
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Don't have an account?{" "}
-            <Button variant="link" className="p-0" onClick={() => setAction("signUp")}>
+            <Button variant="link" className="p-0" onClick={() => handleSwitchAction("signUp")}>
               Sign Up
             </Button>
           </p>
         ) : (
           <p className="mt-4 text-center text-sm text-muted-foreground">
             Already have an account?{" "}
-            <Button variant="link" className="p-0" onClick={() => setAction("signIn")}>
+            <Button variant="link" className="p-0" onClick={() => handleSwitchAction("signIn")}>
               Sign In
             </Button>
           </p>
