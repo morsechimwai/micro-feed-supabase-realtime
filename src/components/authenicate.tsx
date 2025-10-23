@@ -65,9 +65,8 @@ export default function Authenicate({ className, toggleTheme, theme }: Authenica
     form.clearErrors("password");
 
     if (action === "signIn") {
-      toast.loading("Signing in...");
+      const toastId = toast.loading("Signing in...");
       setTimeout(async () => {
-        toast.dismiss();
         try {
           const { error } = await supabase.auth.signInWithPassword({
             email: values.email,
@@ -80,6 +79,7 @@ export default function Authenicate({ className, toggleTheme, theme }: Authenica
               type: "manual",
               message: error.message ?? "Invalid email or password. Please try again.",
             });
+            toast.dismiss(toastId);
             return;
           }
         } catch (error) {
@@ -88,9 +88,10 @@ export default function Authenicate({ className, toggleTheme, theme }: Authenica
             type: "manual",
             message: "Unexpected error during sign in. Please try again.",
           });
+          toast.dismiss(toastId);
         } finally {
           setSubmitting(false);
-          toast.info(`Welcome back! ${values.email}`);
+          toast.info(`Welcome back! ${values.email}`, { id: toastId });
         }
       }, 2000);
     } else {
@@ -108,6 +109,7 @@ export default function Authenicate({ className, toggleTheme, theme }: Authenica
               type: "manual",
               message: "Email is already in use. Please use a different email.",
             });
+            toast.dismiss(toastId);
             return;
           }
 
@@ -118,7 +120,7 @@ export default function Authenicate({ className, toggleTheme, theme }: Authenica
               `Sign up successful! Please check your email: ${values.email}, to confirm your account.`,
               {
                 id: toastId,
-                duration: 10000,
+                duration: 12000,
               }
             );
             setAction("signIn");
@@ -130,6 +132,7 @@ export default function Authenicate({ className, toggleTheme, theme }: Authenica
             type: "manual",
             message: "Unexpected error during sign up. Please try again.",
           });
+          toast.dismiss(toastId);
         } finally {
           setSubmitting(false);
         }
