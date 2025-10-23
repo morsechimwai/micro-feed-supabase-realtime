@@ -19,6 +19,7 @@ import { supabase } from "@/supabase-client";
 
 // Types
 import type { ThemeMode } from "@/types/theme";
+import { toast } from "sonner";
 
 // Form Validation Schema
 const formSchema = z.object({
@@ -58,66 +59,82 @@ export default function Auth({ className, toggleTheme, theme }: AuthProps) {
   const [submitting, setSubmitting] = useState(false);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    console.log(values);
     setSubmitting(true);
 
     // Simulate async operation
     form.clearErrors("password");
 
     if (action === "signIn") {
-      try {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: values.email,
-          password: values.password,
-        });
+      toast.loading("Signing in...");
+      setTimeout(async () => {
+        toast.dismiss();
+        try {
+          const { error } = await supabase.auth.signInWithPassword({
+            email: values.email,
+            password: values.password,
+          });
 
-        if (error) {
-          console.error("Error signing in:", error.message);
+          if (error) {
+            console.error("Error signing in:", error.message);
+            form.setError("password", {
+              type: "manual",
+              message: error.message ?? "Invalid email or password. Please try again.",
+            });
+            return;
+          }
+        } catch (error) {
+          console.error("Error signing in:", error);
           form.setError("password", {
             type: "manual",
-            message: error.message ?? "Invalid email or password. Please try again.",
+            message: "Unexpected error during sign in. Please try again.",
           });
-          return;
+        } finally {
+          setSubmitting(false);
+          toast.info(`Welcome back! ${values.email}`);
         }
-      } catch (error) {
-        console.error("Error signing in:", error);
-        form.setError("password", {
-          type: "manual",
-          message: "Unexpected error during sign in. Please try again.",
-        });
-      } finally {
-        setSubmitting(false);
-      }
+      }, 2000);
     } else {
-      try {
-        const { error, data } = await supabase.auth.signUp({
-          email: values.email,
-          password: values.password,
-        });
+      toast.loading("Signing up...");
 
-        if (error?.message?.includes("already registered")) {
-          form.setError("email", {
-            type: "manual",
-            message: "Email is already in use. Please use a different email.",
+      setTimeout(async () => {
+        toast.dismiss();
+
+        try {
+          const { error, data } = await supabase.auth.signUp({
+            email: values.email,
+            password: values.password,
           });
-          return;
-        }
 
-        // Sign up successful
-        if (data) {
-          console.log("Sign up successful:", data);
-          setAction("signIn");
-          form.reset();
+          if (error?.message?.includes("already registered")) {
+            form.setError("email", {
+              type: "manual",
+              message: "Email is already in use. Please use a different email.",
+            });
+            return;
+          }
+
+          // Sign up successful
+          if (data) {
+            console.log("Sign up successful:", data);
+            toast.success(
+              `Sign up successful! Please check your email: ${values.email}, to confirm your account.`,
+              {
+                duration: 10000,
+              }
+            );
+            setAction("signIn");
+            form.reset();
+          }
+        } catch (error) {
+          console.error("Error signing up:", error);
+          form.setError("password", {
+            type: "manual",
+            message: "Unexpected error during sign up. Please try again.",
+          });
+        } finally {
+          setSubmitting(false);
         }
-      } catch (error) {
-        console.error("Error signing up:", error);
-        form.setError("password", {
-          type: "manual",
-          message: "Unexpected error during sign up. Please try again.",
-        });
-      } finally {
-        setSubmitting(false);
-      }
+      }, 2500);
     }
   };
 

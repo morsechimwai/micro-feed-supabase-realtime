@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "./ui/spinner";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "./ui/form";
+import { toast } from "sonner";
 
 // Icons
 import { LogOut, MessageCircleMore, MoonStar, Plus, Sun } from "lucide-react";
@@ -98,21 +99,30 @@ export default function AddPost({
       console.error("Error uploading image:", error);
       const message = error instanceof Error ? error.message : "Unable to upload image";
       form.setError("image_file", { type: "manual", message });
+      toast.error(message);
     } finally {
       setUploadingImage(false);
+      toast.success("Post added successfully!");
     }
   };
 
   const handleLogout = async () => {
     setLogouting(true);
-    try {
-      await supabase.auth.signOut();
-    } catch (error) {
-      setLogouting(false);
-      console.error("Error signing out:", error);
-    } finally {
-      setLogouting(false);
-    }
+    toast.loading("Signing out...");
+    setTimeout(async () => {
+      toast.dismiss();
+
+      try {
+        await supabase.auth.signOut();
+      } catch (error) {
+        setLogouting(false);
+        console.error("Error signing out:", error);
+        toast.error("Error signing out. Please try again.");
+        return;
+      } finally {
+        setLogouting(false);
+      }
+    }, 2000);
   };
 
   const handleChangeFile = (

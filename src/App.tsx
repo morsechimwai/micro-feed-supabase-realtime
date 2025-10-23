@@ -2,7 +2,7 @@
 import { type ChangeEvent, useEffect, useState } from "react";
 
 // UI Components
-import Auth from "./components/Auth";
+import Auth from "./components/auth";
 import AddPost from "./components/add-post";
 import PostList from "./components/post-list";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "./components/ui/form";
