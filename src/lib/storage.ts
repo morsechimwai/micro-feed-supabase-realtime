@@ -13,7 +13,7 @@ export const createStoragePath = (fileName: string) => {
     typeof crypto !== "undefined" && "randomUUID" in crypto
       ? crypto.randomUUID()
       : RANDOM_FALLBACK();
-  return `{BUCKET_FOLDER}/${uuid}${extension ? `.${extension}` : ""}`;
+  return `${BUCKET_FOLDER}/${uuid}${extension ? `.${extension}` : ""}`;
 };
 
 export const getStoragePathFromUrl = (url: string) => {

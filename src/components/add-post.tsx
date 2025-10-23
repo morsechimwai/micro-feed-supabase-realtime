@@ -152,6 +152,7 @@ export default function AddPost({
   };
 
   const uploadFile = async (file: File) => {
+    console.log("Uploading file:", file);
     const path = createStoragePath(file.name);
     const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, file, {
       cacheControl: "3600",
