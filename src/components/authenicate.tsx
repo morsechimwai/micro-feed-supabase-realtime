@@ -36,13 +36,13 @@ const formSchema = z.object({
     }),
 });
 
-interface AuthProps {
+interface AuthenicateProps {
   className?: string;
   toggleTheme: () => void;
   theme: ThemeMode;
 }
 
-export default function Auth({ className, toggleTheme, theme }: AuthProps) {
+export default function Authenicate({ className, toggleTheme, theme }: AuthenicateProps) {
   // React Hook
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

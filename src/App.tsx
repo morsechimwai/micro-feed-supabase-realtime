@@ -2,7 +2,7 @@
 import { type ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 
 // UI Components
-import Auth from "./components/auth";
+import Auth from "./components/authenicate";
 import Profile from "./components/profile";
 import AddPost from "./components/add-post";
 import PostList from "./components/post-list";
