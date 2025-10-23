@@ -1,5 +1,11 @@
 # 🧞‍♂️ MicroFeed
 
+<p align="center">
+  <a href="https://micro-feed.vercel.app/">
+    <img src="public/micro-feed.png" alt="MicroFeed Logo" width="120" height="120">
+  </a>
+</p>
+
 MicroFeed is an indie-friendly, open-source micropost platform for teams that want to broadcast short updates, visuals, and ideas in real time while retaining full custody of their data. Deploy it under your own Supabase project, tweak the UI, and ship an internal or community feed in a weekend.
 
 ## Why product teams grab MicroFeed
