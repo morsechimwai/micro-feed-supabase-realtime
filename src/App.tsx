@@ -46,6 +46,7 @@ import {
   parseImageReference,
   withCacheBuster,
 } from "./lib/storage";
+import { toast } from "sonner";
 
 // Theme Management
 const THEME_STORAGE_KEY = "theme-preference";
@@ -311,6 +312,7 @@ export default function App() {
     }
 
     setAdding(true);
+    const toastId = toast.loading("Adding post...");
     try {
       const { error } = await supabase
         .from("posts")
@@ -325,12 +327,15 @@ export default function App() {
 
       if (error) {
         console.error("Error adding post:", error.message);
+        toast.error("Error adding post. Please try again.", { id: toastId });
         return;
       }
     } catch (error) {
       console.error("Unexpected error adding post:", error);
+      toast.error("Unexpected error adding post. Please try again.", { id: toastId });
     } finally {
       setAdding(false);
+      toast.success("Post added successfully!", { id: toastId });
     }
   };
 
@@ -341,6 +346,7 @@ export default function App() {
 
     try {
       setEditUploading(true);
+
       let nextImageReference = editingPost.image_url ?? null;
       const maybeFile = values.image_file;
       const existingReference = parseImageReference(editingPost.image_url);
@@ -386,6 +392,7 @@ export default function App() {
       handleEditDialogChange(false);
     } catch (error) {
       console.error("Error updating post:", error);
+
       const message = error instanceof Error ? error.message : "Unable to update post";
       editForm.setError("image_file", { type: "manual", message });
     } finally {
@@ -398,17 +405,21 @@ export default function App() {
     updates: Pick<Post, "title" | "description" | "image_url">
   ) => {
     setUpdatingId(id);
+    const toastId = toast.loading("Updating post...");
     try {
       const { error } = await supabase.from("posts").update(updates).eq("id", id).select().single();
 
       if (error) {
         console.error("Error updating post:", error.message);
+        toast.error("Error updating post. Please try again.", { id: toastId });
         return;
       }
     } catch (error) {
       console.error("Unexpected error updating post:", error);
+      toast.error("Unexpected error updating post. Please try again.", { id: toastId });
     } finally {
       setUpdatingId(null);
+      toast.success("Post updated successfully!", { id: toastId });
     }
   };
 
@@ -447,6 +458,7 @@ export default function App() {
 
   const handleDeletePost = async (post: Post) => {
     setDeletingId(post.id);
+    const toastId = toast.loading("Deleting post...");
     try {
       const reference = parseImageReference(post.image_url);
       if (reference.path) {
@@ -458,6 +470,7 @@ export default function App() {
 
         if (storageError) {
           console.error("Error deleting image from storage:", storageError.message);
+          toast.error("Error deleting image from storage", { id: toastId });
           return;
         }
 
@@ -469,13 +482,16 @@ export default function App() {
       const { error } = await supabase.from("posts").delete().eq("id", post.id).select().single();
 
       if (error) {
+        toast.error("Error deleting post. Please try again.", { id: toastId });
         console.error("Error deleting post:", error.message);
         return;
       }
     } catch (error) {
+      toast.error("Unexpected error deleting post. Please try again.", { id: toastId });
       console.error("Unexpected error deleting post:", error);
     } finally {
       setDeletingId(null);
+      toast.success("Post deleted successfully!", { id: toastId });
     }
   };
 

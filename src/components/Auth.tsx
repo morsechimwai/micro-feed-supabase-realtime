@@ -7,7 +7,7 @@ import { Button } from "./ui/button";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 
 // Icons
-import { KeySquare, Loader2, MoonStar, Sun, User } from "lucide-react";
+import { Loader2, MessageCircleMore, MoonStar, Sun } from "lucide-react";
 
 // Libraries for form validation
 import { z } from "zod";
@@ -145,15 +145,13 @@ export default function Auth({ className, toggleTheme, theme }: AuthProps) {
   return (
     <div className={`${className}`}>
       <header className="flex flex-wrap items-start justify-between gap-3 sm:items-center">
+        <Button aria-label={themeLabel} onClick={toggleTheme} size="icon" variant="outline">
+          {themeIcon}
+        </Button>
         <h2 className="flex items-center text-xl font-semibold text-card-foreground">
-          {action === "signIn" ? <KeySquare /> : <User />}
-          <span className="ml-2">{action === "signIn" ? "Sign In" : "Sign Up"}</span>
+          <MessageCircleMore />
+          <span className="ml-2">MicroFeed</span>
         </h2>
-        <div className="flex flex-row gap-2">
-          <Button aria-label={themeLabel} onClick={toggleTheme} size="icon" variant="outline">
-            {themeIcon}
-          </Button>
-        </div>
       </header>
       <div className="mt-4 space-y-2">
         <Form {...form}>
