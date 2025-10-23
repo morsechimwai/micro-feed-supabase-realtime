@@ -33,6 +33,18 @@ const formSchema = z.object({
     })
     .max(50, {
       message: "Password must be at most 50 characters long",
+    })
+    .regex(/[a-z]/, {
+      message: "Password must include at least one lowercase letter.",
+    })
+    .regex(/[A-Z]/, {
+      message: "Password must include at least one uppercase letter.",
+    })
+    .regex(/\d/, {
+      message: "Password must include at least one number.",
+    })
+    .regex(/[^A-Za-z0-9]/, {
+      message: "Password must include at least one symbol.",
     }),
   confirm_password: z
     .string()
@@ -116,8 +128,7 @@ export default function Authenicate({ className, toggleTheme, theme }: Authenica
 
       setTimeout(async () => {
         try {
-          const confirm =
-            form.getValues("confirm_password")?.trim() ?? "";
+          const confirm = form.getValues("confirm_password")?.trim() ?? "";
           if (values.password !== confirm) {
             form.setError("confirm_password", {
               type: "manual",
@@ -143,7 +154,12 @@ export default function Authenicate({ className, toggleTheme, theme }: Authenica
             return;
           }
 
-          if (!error && data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+          if (
+            !error &&
+            data?.user &&
+            Array.isArray(data.user.identities) &&
+            data.user.identities.length === 0
+          ) {
             form.setError("email", {
               type: "manual",
               message: "Email is already in use. Please sign in instead.",
@@ -217,67 +233,157 @@ export default function Authenicate({ className, toggleTheme, theme }: Authenica
             <FormField
               control={form.control}
               name="password"
-              render={({ field, fieldState }) => (
-                <FormItem>
-                  <FormControl>
-                    <div className="relative">
-                      <Input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Password"
-                        autoComplete="off"
-                        maxLength={50}
-                        {...field}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground"
-                        onClick={() => setShowPassword((prev) => !prev)}
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                      >
-                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                      </Button>
-                    </div>
-                  </FormControl>
-                  <FormMessage>{fieldState.error?.message}</FormMessage>
-                </FormItem>
-              )}
+              render={({ field, fieldState }) => {
+                const requirements = [
+                  {
+                    label: "At least 8 characters",
+                    met: field.value?.length >= 8,
+                  },
+                  {
+                    label: "At least one lowercase letter",
+                    met: /[a-z]/.test(field.value ?? ""),
+                  },
+                  {
+                    label: "At least one uppercase letter",
+                    met: /[A-Z]/.test(field.value ?? ""),
+                  },
+                  {
+                    label: "At least one number",
+                    met: /\d/.test(field.value ?? ""),
+                  },
+                  {
+                    label: "At least one symbol",
+                    met: /[^A-Za-z0-9]/.test(field.value ?? ""),
+                  },
+                ];
+
+                return (
+                  <FormItem>
+                    <FormControl>
+                      <div className="space-y-2">
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Password"
+                            autoComplete="off"
+                            minLength={8}
+                            maxLength={50}
+                            {...field}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground"
+                            onClick={() => setShowPassword((prev) => !prev)}
+                            aria-label={showPassword ? "Hide password" : "Show password"}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="size-4" />
+                            ) : (
+                              <Eye className="size-4" />
+                            )}
+                          </Button>
+                        </div>
+                        {action === "signUp" ? (
+                          <ul className="space-y-1 rounded-md bg-muted/40 p-3 text-xs">
+                            {requirements.map((requirement) => (
+                              <li
+                                key={requirement.label}
+                                className={`flex items-center gap-2 ${
+                                  requirement.met
+                                    ? "text-green-600 dark:text-green-400"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
+                                <span
+                                  className={`inline-block h-2.5 w-2.5 rounded-full ${
+                                    requirement.met ? "bg-green-500" : "bg-muted-foreground/60"
+                                  }`}
+                                />
+                                {requirement.label}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
+                      </div>
+                    </FormControl>
+                    <FormMessage>{fieldState.error?.message}</FormMessage>
+                  </FormItem>
+                );
+              }}
             />
             {action === "signUp" ? (
               <FormField
                 control={form.control}
                 name="confirm_password"
-                render={({ field, fieldState }) => (
-                  <FormItem>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          type={showConfirmPassword ? "text" : "password"}
-                          placeholder="Confirm Password"
-                          autoComplete="off"
-                          maxLength={50}
-                          {...field}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground"
-                          onClick={() => setShowConfirmPassword((prev) => !prev)}
-                          aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-                        >
-                          {showConfirmPassword ? (
-                            <EyeOff className="size-4" />
-                          ) : (
-                            <Eye className="size-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </FormControl>
-                    <FormMessage>{fieldState.error?.message}</FormMessage>
-                  </FormItem>
-                )}
+                render={({ field, fieldState }) => {
+                  const requirements = [
+                    {
+                      label: "Matches password",
+                      met:
+                        (field.value ?? "").length > 0 &&
+                        field.value === form.getValues("password"),
+                    },
+                  ];
+
+                  return (
+                    <FormItem>
+                      <FormControl>
+                        <div className="space-y-2">
+                          <div className="relative">
+                            <Input
+                              type={showConfirmPassword ? "text" : "password"}
+                              placeholder="Confirm Password"
+                              autoComplete="off"
+                              minLength={8}
+                              maxLength={50}
+                              {...field}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground"
+                              onClick={() => setShowConfirmPassword((prev) => !prev)}
+                              aria-label={
+                                showConfirmPassword
+                                  ? "Hide confirm password"
+                                  : "Show confirm password"
+                              }
+                            >
+                              {showConfirmPassword ? (
+                                <EyeOff className="size-4" />
+                              ) : (
+                                <Eye className="size-4" />
+                              )}
+                            </Button>
+                          </div>
+                          <ul className="space-y-1 rounded-md bg-muted/40 p-3 text-xs">
+                            {requirements.map((requirement) => (
+                              <li
+                                key={requirement.label}
+                                className={`flex items-center gap-2 ${
+                                  requirement.met
+                                    ? "text-green-600 dark:text-green-400"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
+                                <span
+                                  className={`inline-block h-2.5 w-2.5 rounded-full ${
+                                    requirement.met ? "bg-green-500" : "bg-muted-foreground/60"
+                                  }`}
+                                />
+                                {requirement.label}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </FormControl>
+                      <FormMessage>{fieldState.error?.message}</FormMessage>
+                    </FormItem>
+                  );
+                }}
               />
             ) : null}
             <Button className="mt-4 w-full" type="submit" disabled={submitting}>
