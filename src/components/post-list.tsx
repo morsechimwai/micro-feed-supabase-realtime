@@ -134,7 +134,7 @@ export default function PostList({
                 <Spinner className="mx-auto" />
               </div>
             ) : null}
-            {!hasMore && posts.length > 0 ? (
+            {session && !hasMore && posts.length > 0 ? (
               <p className="py-4 text-center text-sm text-muted-foreground">
                 No more posts to load.
               </p>

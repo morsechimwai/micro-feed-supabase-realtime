@@ -91,6 +91,7 @@ export default function App() {
   const [initialFetching, setInitialFetching] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMorePosts, setHasMorePosts] = useState(true);
+  const [authOverlayVisible, setAuthOverlayVisible] = useState(false);
   const [adding, setAdding] = useState(false);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -243,6 +244,16 @@ export default function App() {
     }
   }, []);
 
+  useEffect(() => {
+    if (session) {
+      setAuthOverlayVisible(false);
+      setHasMorePosts(true);
+    } else {
+      setAuthOverlayVisible(false);
+      setPosts((previous) => previous.slice(0, POSTS_PAGE_SIZE));
+    }
+  }, [session]);
+
   const loadInitialPosts = useCallback(async () => {
     setInitialFetching(true);
     setHasMorePosts(true);
@@ -251,7 +262,7 @@ export default function App() {
         .from("posts")
         .select("*")
         .order("created_at", { ascending: false })
-        .limit(POSTS_PAGE_SIZE);
+        .limit(POSTS_PAGE_SIZE + 1);
 
       if (error) {
         console.error("Error fetching posts:", error.message);
@@ -259,10 +270,13 @@ export default function App() {
       }
 
       const fetchedPosts = data ?? [];
-      setPosts(fetchedPosts);
-      setHasMorePosts(fetchedPosts.length === POSTS_PAGE_SIZE);
-      if (fetchedPosts.length > 0) {
-        void ensureProfiles(fetchedPosts.map((post) => post.email));
+      const hasExtra = fetchedPosts.length > POSTS_PAGE_SIZE;
+      const visiblePosts = fetchedPosts.slice(0, POSTS_PAGE_SIZE);
+
+      setPosts(visiblePosts);
+      setHasMorePosts(hasExtra);
+      if (visiblePosts.length > 0) {
+        void ensureProfiles(visiblePosts.map((post) => post.email));
       }
       await refreshPostStats();
     } catch (error) {
@@ -273,6 +287,12 @@ export default function App() {
   }, [ensureProfiles, refreshPostStats]);
 
   const loadMorePosts = useCallback(async () => {
+    if (!session) {
+      setAuthOverlayVisible(true);
+      setHasMorePosts(false);
+      return;
+    }
+
     if (loadingMore || !hasMorePosts) {
       return;
     }
@@ -316,7 +336,7 @@ export default function App() {
     } finally {
       setLoadingMore(false);
     }
-  }, [loadingMore, hasMorePosts, posts, ensureProfiles, refreshPostStats]);
+  }, [session, loadingMore, hasMorePosts, posts, ensureProfiles, refreshPostStats]);
 
   const handleLoadMorePosts = useCallback(() => {
     void loadMorePosts();
@@ -1052,6 +1072,15 @@ export default function App() {
           </Form>
         </DialogContent>
       </Dialog>
+      {!session && authOverlayVisible ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/40 backdrop-blur-sm">
+          <Auth
+            className="mx-auto w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors"
+            toggleTheme={toggleTheme}
+            theme={theme}
+          />
+        </div>
+      ) : null}
     </>
   );
 }
