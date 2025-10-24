@@ -9,9 +9,6 @@ import { Spinner } from "./ui/spinner";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "./ui/form";
 import { toast } from "sonner";
 
-// Icons
-import { Plus } from "lucide-react";
-
 // Types
 import type { Post } from "@/types/post";
 
@@ -288,10 +285,7 @@ export default function AddPost({ className, adding, onAddPost, onSubmitted }: A
                   {uploadingImage ? "Uploading..." : "Publishing..."}
                 </>
               ) : (
-                <>
-                  <Plus />
-                  Publish Post
-                </>
+                "Publish Post"
               )}
             </Button>
           </form>

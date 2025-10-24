@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 
 // Icons
-import { EllipsisVertical, MessageCircleMore, Pencil, Trash2 } from "lucide-react";
+import { EllipsisVertical, Pencil, Trash2 } from "lucide-react";
 
 // Types
 import type { Post } from "@/types/post";
@@ -119,12 +119,12 @@ export default function PostItem({
 
   return (
     <>
-      <li className="bg-card flex flex-col gap-4 border transition-colors hover:bg-accent shadow-lg rounded-3xl overflow-hidden scale-100 hover:scale-[1.01] duration-150">
+      <li className="bg-card flex flex-col gap-4 border transition-colors hover:bg-accent shadow-lg rounded-none overflow-hidden scale-100 hover:scale-[1.01] duration-150 lg:rounded-3xl">
         <div className="space-y-2">
           <div className="flex flex-row items-center justify-between pt-2">
             <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="ghost" className="px-4 mt-2 gap-2">
+                <Button variant="ghost" className="mt-2 gap-2 px-4">
                   <div className="flex flex-row items-center gap-2 text-left">
                     <Avatar>
                       {profileImage ? (
@@ -248,12 +248,9 @@ export default function PostItem({
 
           <div className="mb-2 px-4">
             <h3 className="text-based text-secondary-foreground break-words">{post.title}</h3>
-            <div className="flex flex-row items-start gap-1.5 mt-2">
-              <MessageCircleMore className="size-3.5 mt-1" />
-              <p className="flex-1 text-sm text-muted-foreground whitespace-pre-wrap break-all">
-                {post.description}
-              </p>
-            </div>
+            <p className="flex-1 text-sm text-muted-foreground whitespace-pre-wrap break-all mt-2">
+              {post.description}
+            </p>
           </div>
         </div>
       </li>

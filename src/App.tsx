@@ -22,7 +22,7 @@ import { Input } from "./components/ui/input";
 import { Spinner } from "./components/ui/spinner";
 
 // Icons
-import { Plus } from "lucide-react";
+import { User2 } from "lucide-react";
 
 // Types
 import type { ThemeMode } from "./types/theme";
@@ -101,7 +101,8 @@ export default function App() {
   const [postToDelete, setPostToDelete] = useState<Post | null>(null);
   const [editPreview, setEditPreview] = useState<string | null>(null);
   const [editUploading, setEditUploading] = useState(false);
-  const [mobileAddOpen, setMobileAddOpen] = useState(false);
+  const [addPostOpen, setAddPostOpen] = useState(false);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>(() => {
     if (typeof window === "undefined") {
       return "light";
@@ -374,7 +375,8 @@ export default function App() {
 
   useEffect(() => {
     if (!session) {
-      setMobileAddOpen(false);
+      setAddPostOpen(false);
+      setProfileDialogOpen(false);
     }
   }, [session]);
 
@@ -789,20 +791,20 @@ export default function App() {
   return (
     <>
       <div className="min-h-screen text-foreground transition-colors">
-        <div className="container mx-auto px-4 py-10">
+        <div className="container mx-auto px-0 lg:px-4 py-10">
           <div className="grid gap-6 lg:grid-cols-[1fr_minmax(0,450px)]">
             <div className="space-y-4 relative">
               {/* No session */}
               {!session ? (
                 <Auth
-                  className="w-full sticky z-10 top-5 rounded-3xl border bg-card p-6 shadow-lg transition-colors mx-auto lg:hidden"
+                  className="w-full sticky z-10 top-5 border bg-card p-6 shadow-lg transition-colors mx-auto lg:hidden"
                   toggleTheme={toggleTheme}
                   theme={theme}
                 />
               ) : null}
 
               <PostList
-                className="w-full mx-auto max-w-4xl transition-colors"
+                className="w-full mx-auto  transition-colors p-0"
                 posts={posts}
                 session={session}
                 profiles={profilesByEmail}
@@ -820,21 +822,15 @@ export default function App() {
 
             <div className="hidden space-y-4 lg:sticky lg:top-10 lg:block lg:h-fit lg:min-h-[calc(100vh-5rem)]">
               {session ? (
-                <>
-                  <Profile
-                    className="mx-auto w-full max-w-md rounded-3xl border bg-card shadow-lg transition-colors"
-                    toggleTheme={toggleTheme}
-                    theme={theme}
-                    session={session}
-                    currentUserPostCount={currentUserPostCount}
-                    currentUserLastPostAt={currentUserLastPostAt}
-                  />
-                  <AddPost
-                    className="mx-auto w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors"
-                    adding={adding}
-                    onAddPost={handleAddPost}
-                  />
-                </>
+                <Profile
+                  className="mx-auto w-full max-w-md rounded-3xl border bg-card shadow-lg transition-colors"
+                  toggleTheme={toggleTheme}
+                  theme={theme}
+                  session={session}
+                  currentUserPostCount={currentUserPostCount}
+                  currentUserLastPostAt={currentUserLastPostAt}
+                  onAddPostClick={() => setAddPostOpen(true)}
+                />
               ) : (
                 <Auth
                   className="mx-auto w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors"
@@ -880,16 +876,16 @@ export default function App() {
       {session ? (
         <>
           <Button
-            aria-label="New Post"
+            aria-label="Open Profile"
             size="icon"
             className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-xl transition hover:scale-105 focus-visible:ring-2 focus-visible:ring-offset-2 lg:hidden"
-            onClick={() => setMobileAddOpen(true)}
+            onClick={() => setProfileDialogOpen(true)}
           >
-            <Plus className="size-6" />
+            <User2 className="size-6" />
           </Button>
-          <Dialog open={mobileAddOpen} onOpenChange={setMobileAddOpen}>
-            <DialogContent className="px-4 border-0 sm:max-w-[420px] bg-transparent sm:shadow-none">
-              <DialogTitle></DialogTitle>
+          <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
+            <DialogContent className="border-0 bg-transparent p-0 px-4 sm:max-w-[520px] sm:px-0 sm:shadow-none">
+              <DialogTitle className="sr-only">Your profile</DialogTitle>
               <Profile
                 className="mx-auto w-full max-w-md rounded-3xl border bg-card shadow-lg transition-colors"
                 toggleTheme={toggleTheme}
@@ -897,12 +893,21 @@ export default function App() {
                 session={session}
                 currentUserPostCount={currentUserPostCount}
                 currentUserLastPostAt={currentUserLastPostAt}
+                onAddPostClick={() => setAddPostOpen(true)}
               />
+            </DialogContent>
+          </Dialog>
+          <Dialog open={addPostOpen} onOpenChange={setAddPostOpen}>
+            <DialogContent className="border-0 bg-transparent p-0 px-4 sm:max-w-[520px] sm:px-0 sm:shadow-none">
+              <DialogTitle className="sr-only">Create a new post</DialogTitle>
               <AddPost
                 className="mx-auto w-full max-w-md space-y-4 rounded-3xl border bg-card p-6 shadow-lg"
                 adding={adding}
                 onAddPost={handleAddPost}
-                onSubmitted={() => setMobileAddOpen(false)}
+                onSubmitted={() => {
+                  setAddPostOpen(false);
+                  setProfileDialogOpen(false);
+                }}
               />
             </DialogContent>
           </Dialog>

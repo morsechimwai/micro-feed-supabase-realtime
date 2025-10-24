@@ -1,6 +1,6 @@
 import { type ChangeEvent, useEffect, useState } from "react";
 
-import { LogOut, Mail, MessageCircleMore, MoonStar, Sun } from "lucide-react";
+import { LogOut, Mail, MessageCircleMore, MoonStar, Sun, Plus } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -43,6 +43,7 @@ interface ProfileProps {
   session: Session | null;
   currentUserPostCount: number;
   currentUserLastPostAt: string | null;
+  onAddPostClick?: () => void;
 }
 
 const profileSchema = z.object({
@@ -58,6 +59,7 @@ export default function Profile({
   theme,
   session,
   currentUserPostCount,
+  onAddPostClick,
 }: ProfileProps) {
   const [logouting, setLogouting] = useState(false);
   const [profile, setProfile] = useState<User | null>(null);
@@ -481,11 +483,23 @@ export default function Profile({
 
       <Separator />
       <div className="px-6 py-4 text-center">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Your Posts
-        </p>
-        <p className="mt-1 text-2xl font-semibold text-card-foreground">{currentUserPostCount}</p>
+        <div className="space-y-1 bg-muted/50 px-4 py-3 rounded-md inline-block w-full">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Your Posts
+          </p>
+          <p className="mt-1 text-2xl font-semibold text-card-foreground">{currentUserPostCount}</p>
+        </div>
       </div>
+      {onAddPostClick ? (
+        <div className="px-6 pb-6">
+          <div className="mx-auto w-full shadow-lg transition-colors">
+            <Button className="w-full" onClick={onAddPostClick}>
+              <Plus className="mr-2 size-5" />
+              Add Post
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       <Dialog open={editOpen} onOpenChange={handleEditDialogChange}>
         <DialogContent>

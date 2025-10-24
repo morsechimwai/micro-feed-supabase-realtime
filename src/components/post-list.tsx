@@ -88,10 +88,10 @@ export default function PostList({
       <div className={`${className}`}>
         {fetching ? (
           <div className="space-y-4">
-            <Skeleton className="h-96 w-full rounded-3xl border" />
-            <Skeleton className="h-96 w-full rounded-3xl border" />
-            <Skeleton className="h-96 w-full rounded-3xl border" />
-            <Skeleton className="h-96 w-full rounded-3xl border" />
+            <Skeleton className="h-96 w-full rounded-none md:rounded-3xl border" />
+            <Skeleton className="h-96 w-full rounded-none md:rounded-3xl border" />
+            <Skeleton className="h-96 w-full rounded-none md:rounded-3xl border" />
+            <Skeleton className="h-96 w-full rounded-none md:rounded-3xl border" />
           </div>
         ) : posts.length === 0 ? (
           <Empty>
@@ -108,7 +108,7 @@ export default function PostList({
           </Empty>
         ) : (
           <>
-            <ul className="space-y-4">
+            <ul className="space-y-2 md:space-y-4">
               {posts.map((post) => {
                 const normalizedEmail = post.email.trim().toLowerCase();
                 const stats = postStatsByEmail[normalizedEmail] ?? null;
