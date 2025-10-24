@@ -266,7 +266,7 @@ export default function App() {
     };
 
     void loadFeed();
-  }, [ensureProfiles]);
+  }, []);
 
   useEffect(() => {
     const channel = supabase
@@ -296,7 +296,7 @@ export default function App() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [ensureProfiles]);
+  }, []);
 
   useEffect(() => {
     const channel = supabase
