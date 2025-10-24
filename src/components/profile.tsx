@@ -25,7 +25,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import type { ThemeMode } from "@/types/theme";
 import type { User } from "@/types/user";
-// import { formatCreatedAt } from "@/lib/utils";
 import {
   MAX_IMAGE_FILE_SIZE_BYTES,
   USERS_STORAGE_BUCKET,
@@ -59,7 +58,6 @@ export default function Profile({
   theme,
   session,
   currentUserPostCount,
-  // currentUserLastPostAt,
 }: ProfileProps) {
   const [logouting, setLogouting] = useState(false);
   const [profile, setProfile] = useState<User | null>(null);
@@ -432,9 +430,6 @@ export default function Profile({
         session?.user.email)) ?? "Profile";
   const displayBio = loadingProfile ? "Loading..." : (profile?.bio ?? "");
   const displayFallback = session?.user.email?.charAt(0).toUpperCase() ?? "?";
-  // const lastPostDisplay = currentUserLastPostAt
-  //   ? formatCreatedAt(currentUserLastPostAt)
-  //   : "No posts yet";
 
   const themeIcon = theme === "dark" ? <Sun className="size-5" /> : <MoonStar className="size-5" />;
   const themeLabel = theme === "dark" ? "Switch to light theme" : "Switch to dark theme";
@@ -486,13 +481,10 @@ export default function Profile({
 
       <Separator />
       <div className="px-6 py-4 text-center">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground ">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Your Posts
         </p>
         <p className="mt-1 text-2xl font-semibold text-card-foreground">{currentUserPostCount}</p>
-        {/* <p className="mt-2 text-xs font-medium text-muted-foreground">
-            Last post: <span className="text-card-foreground/80">{lastPostDisplay}</span>
-          </p> */}
       </div>
 
       <Dialog open={editOpen} onOpenChange={handleEditDialogChange}>

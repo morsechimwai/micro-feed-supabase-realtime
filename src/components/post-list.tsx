@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+
 // UI Components
 import PostItem from "./post-item";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,6 +11,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { Spinner } from "@/components/ui/spinner";
 
 // Icons
 import { MessageCircleOff } from "lucide-react";
@@ -25,6 +28,9 @@ interface PostListProps {
   profiles: Record<string, User>;
   postStatsByEmail: Record<string, { count: number; lastPostAt: string | null }>;
   fetching: boolean;
+  loadingMore: boolean;
+  hasMore: boolean;
+  onLoadMore: () => void;
   updatingId: number | null;
   deletingId: number | null;
   onDeletePost: (post: Post) => void;
@@ -38,11 +44,45 @@ export default function PostList({
   profiles,
   postStatsByEmail,
   fetching,
+  loadingMore,
+  hasMore,
+  onLoadMore,
   updatingId,
   deletingId,
   onDeletePost,
   onEditPost,
 }: PostListProps) {
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!hasMore || loadingMore || fetching) {
+      return;
+    }
+
+    const node = sentinelRef.current;
+    if (!node) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry?.isIntersecting) {
+          onLoadMore();
+        }
+      },
+      {
+        rootMargin: "200px",
+      }
+    );
+
+    observer.observe(node);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasMore, loadingMore, onLoadMore, fetching, posts.length]);
+
   return (
     <>
       <div className={`${className}`}>
@@ -67,9 +107,9 @@ export default function PostList({
             <EmptyContent>Create a new post using the (+) button.</EmptyContent>
           </Empty>
         ) : (
-          <ul className="space-y-4">
-            {posts
-              .map((post) => {
+          <>
+            <ul className="space-y-4">
+              {posts.map((post) => {
                 const normalizedEmail = post.email.trim().toLowerCase();
                 const stats = postStatsByEmail[normalizedEmail] ?? null;
                 return (
@@ -86,9 +126,20 @@ export default function PostList({
                     isDeleting={deletingId === post.id}
                   />
                 );
-              })
-              .reverse()}
-          </ul>
+              })}
+            </ul>
+            {posts.length > 0 ? <div ref={sentinelRef} className="h-1" /> : null}
+            {loadingMore ? (
+              <div className="py-4 text-center">
+                <Spinner className="mx-auto" />
+              </div>
+            ) : null}
+            {!hasMore && posts.length > 0 ? (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                No more posts to load.
+              </p>
+            ) : null}
+          </>
         )}
       </div>
     </>

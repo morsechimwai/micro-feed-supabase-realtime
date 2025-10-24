@@ -180,10 +180,19 @@ export default function PostItem({
                         </div>
                       </div>
                     </div>
+
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-muted-foreground">Bio</p>
                       <p className="text-sm text-card-foreground whitespace-pre-wrap break-words">
                         {displayBio ?? "No bio provided."}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border bg-muted/20 p-4 text-center">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {postCountLabel}
+                      </p>
+                      <p className="mt-1 text-2xl font-semibold text-card-foreground">
+                        {postCount}
                       </p>
                     </div>
                     <div className="grid gap-2 sm:grid-cols-2">
@@ -197,12 +206,6 @@ export default function PostItem({
                         <p className="text-sm font-medium text-muted-foreground">Last post</p>
                         <p className="text-sm text-card-foreground">{lastPostDisplay}</p>
                       </div>
-                    </div>
-                    <div className="rounded-2xl border bg-muted/20 p-4 text-center">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        {postCountLabel}
-                      </p>
-                      <p className="mt-1 text-2xl font-semibold text-card-foreground">{postCount}</p>
                     </div>
                   </div>
                 ) : (

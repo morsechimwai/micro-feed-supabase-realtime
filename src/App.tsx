@@ -58,6 +58,8 @@ type PostStats = {
   lastPostAt: string | null;
 };
 
+const POSTS_PAGE_SIZE = 5;
+
 // Form Validation Schema
 const postSchema = z.object({
   title: z.string().min(1, "Title is required").max(100, "Title is too long"),
@@ -83,9 +85,12 @@ export default function App() {
   // State Management
   const [session, setSession] = useState<Session | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [postStatsByEmail, setPostStatsByEmail] = useState<Record<string, PostStats>>({});
   const [profilesByEmail, setProfilesByEmail] = useState<Record<string, User>>({});
   const profilesRef = useRef<Record<string, User>>({});
-  const [fetching, setFetching] = useState(false);
+  const [initialFetching, setInitialFetching] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMorePosts, setHasMorePosts] = useState(true);
   const [adding, setAdding] = useState(false);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -109,54 +114,9 @@ export default function App() {
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
 
-  const postStatsByEmail = useMemo(() => {
-    if (!posts.length) {
-      return {};
-    }
-
-    const stats: Record<string, PostStats> = {};
-
-    for (const post of posts) {
-      const postEmail = typeof post.email === "string" ? post.email.trim().toLowerCase() : null;
-      if (!postEmail) {
-        continue;
-      }
-
-      const createdAt = typeof post.created_at === "string" ? post.created_at : null;
-      const existing = stats[postEmail];
-
-      if (!existing) {
-        stats[postEmail] = {
-          count: 1,
-          lastPostAt: createdAt,
-        };
-        continue;
-      }
-
-      existing.count += 1;
-
-      if (createdAt) {
-        const previous = existing.lastPostAt;
-        if (!previous) {
-          existing.lastPostAt = createdAt;
-        } else {
-          const createdTime = Date.parse(createdAt);
-          const previousTime = Date.parse(previous);
-          if (!Number.isNaN(createdTime) && (Number.isNaN(previousTime) || createdTime > previousTime)) {
-            existing.lastPostAt = createdAt;
-          }
-        }
-      }
-    }
-
-    return stats;
-  }, [posts]);
-
   const currentUserPostCount = useMemo(() => {
     const normalizedEmail =
-      typeof session?.user?.email === "string"
-        ? session.user.email.trim().toLowerCase()
-        : null;
+      typeof session?.user?.email === "string" ? session.user.email.trim().toLowerCase() : null;
 
     if (!normalizedEmail) {
       return 0;
@@ -167,9 +127,7 @@ export default function App() {
 
   const currentUserLastPostAt = useMemo(() => {
     const normalizedEmail =
-      typeof session?.user?.email === "string"
-        ? session.user.email.trim().toLowerCase()
-        : null;
+      typeof session?.user?.email === "string" ? session.user.email.trim().toLowerCase() : null;
 
     if (!normalizedEmail) {
       return null;
@@ -246,6 +204,124 @@ export default function App() {
     });
   }, []);
 
+  const refreshPostStats = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.from("posts").select("email, created_at");
+
+      if (error) {
+        console.error("Error refreshing post stats:", error.message);
+        return;
+      }
+
+      const stats: Record<string, PostStats> = {};
+      for (const row of data ?? []) {
+        const email = typeof row.email === "string" ? row.email.trim().toLowerCase() : null;
+        if (!email) {
+          continue;
+        }
+
+        const createdAt = typeof row.created_at === "string" ? row.created_at : null;
+        const existing = stats[email] ?? { count: 0, lastPostAt: null as string | null };
+
+        existing.count += 1;
+        if (createdAt) {
+          const newTimestamp = Date.parse(createdAt);
+          if (!Number.isNaN(newTimestamp)) {
+            const previousTimestamp = existing.lastPostAt ? Date.parse(existing.lastPostAt) : null;
+            if (previousTimestamp === null || newTimestamp > previousTimestamp) {
+              existing.lastPostAt = createdAt;
+            }
+          }
+        }
+
+        stats[email] = existing;
+      }
+
+      setPostStatsByEmail(stats);
+    } catch (error) {
+      console.error("Unexpected error refreshing post stats:", error);
+    }
+  }, []);
+
+  const loadInitialPosts = useCallback(async () => {
+    setInitialFetching(true);
+    setHasMorePosts(true);
+    try {
+      const { data, error } = await supabase
+        .from("posts")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(POSTS_PAGE_SIZE);
+
+      if (error) {
+        console.error("Error fetching posts:", error.message);
+        return;
+      }
+
+      const fetchedPosts = data ?? [];
+      setPosts(fetchedPosts);
+      setHasMorePosts(fetchedPosts.length === POSTS_PAGE_SIZE);
+      if (fetchedPosts.length > 0) {
+        void ensureProfiles(fetchedPosts.map((post) => post.email));
+      }
+      await refreshPostStats();
+    } catch (error) {
+      console.error("Unexpected error fetching posts:", error);
+    } finally {
+      setInitialFetching(false);
+    }
+  }, [ensureProfiles, refreshPostStats]);
+
+  const loadMorePosts = useCallback(async () => {
+    if (loadingMore || !hasMorePosts) {
+      return;
+    }
+
+    const oldestPost = posts[posts.length - 1] ?? null;
+    if (!oldestPost?.created_at) {
+      setHasMorePosts(false);
+      return;
+    }
+
+    setLoadingMore(true);
+    try {
+      const { data, error } = await supabase
+        .from("posts")
+        .select("*")
+        .lt("created_at", oldestPost.created_at)
+        .order("created_at", { ascending: false })
+        .limit(POSTS_PAGE_SIZE);
+
+      if (error) {
+        console.error("Error loading more posts:", error.message);
+        return;
+      }
+
+      const fetchedPosts = data ?? [];
+      if (fetchedPosts.length > 0) {
+        setPosts((previous) => {
+          const existingIds = new Set(previous.map((post) => post.id));
+          const merged = [...previous, ...fetchedPosts.filter((post) => !existingIds.has(post.id))];
+          return merged;
+        });
+        void ensureProfiles(fetchedPosts.map((post) => post.email));
+      }
+
+      if (fetchedPosts.length < POSTS_PAGE_SIZE) {
+        setHasMorePosts(false);
+      }
+      await refreshPostStats();
+    } catch (error) {
+      console.error("Unexpected error loading more posts:", error);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, hasMorePosts, posts, ensureProfiles, refreshPostStats]);
+
+  const handleLoadMorePosts = useCallback(() => {
+    void loadMorePosts();
+  }, [loadMorePosts]);
+
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -316,31 +392,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const loadFeed = async () => {
-      setFetching(true);
-      try {
-        const { error, data } = await supabase
-          .from("posts")
-          .select("*")
-          .order("created_at", { ascending: true });
-
-        if (error) {
-          console.error("Error fetching posts:", error.message);
-          return;
-        }
-
-        const fetchedPosts = data ?? [];
-        setPosts(fetchedPosts);
-        void ensureProfiles(fetchedPosts.map((post) => post.email));
-      } catch (error) {
-        console.error("Unexpected error fetching posts:", error);
-      } finally {
-        setFetching(false);
-      }
-    };
-
-    void loadFeed();
-  }, []);
+    void loadInitialPosts();
+  }, [loadInitialPosts]);
 
   useEffect(() => {
     const channel = supabase
@@ -348,19 +401,29 @@ export default function App() {
       // เมื่อมีการเพิ่ม post
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "posts" }, (payload) => {
         const newPost = payload.new as Post;
-        setPosts((prev) => [...prev, newPost]);
+        setPosts((previous) => {
+          if (previous.some((post) => post.id === newPost.id)) {
+            return previous;
+          }
+          return [newPost, ...previous].sort((a, b) =>
+            a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0
+          );
+        });
         void ensureProfiles([newPost.email]);
+        void refreshPostStats();
       })
       // เมื่อมีการอัปเดต post
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "posts" }, (payload) => {
         const updatedPost = payload.new as Post;
         setPosts((prev) => prev.map((post) => (post.id === updatedPost.id ? updatedPost : post)));
         void ensureProfiles([updatedPost.email]);
+        void refreshPostStats();
       })
       // เมื่อมีการลบ post
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "posts" }, (payload) => {
         const deletedPost = payload.old as Post;
         setPosts((prev) => prev.filter((post) => post.id !== deletedPost.id));
+        void refreshPostStats();
       })
       .subscribe((status) => {
         console.log("Subscription status:", status);
@@ -510,6 +573,7 @@ export default function App() {
 
       toast.success("Post added successfully!", { id: toastId });
       isSuccessful = true;
+      void refreshPostStats();
     } catch (error) {
       console.error("Unexpected error adding post:", error);
       toast.error("Unexpected error adding post. Please try again.", { id: toastId });
@@ -670,6 +734,7 @@ export default function App() {
       }
 
       toast.success("Post deleted successfully!", { id: toastId });
+      void refreshPostStats();
     } catch (error) {
       toast.error("Unexpected error deleting post. Please try again.", { id: toastId });
       console.error("Unexpected error deleting post:", error);
@@ -721,7 +786,10 @@ export default function App() {
                 session={session}
                 profiles={profilesByEmail}
                 postStatsByEmail={postStatsByEmail}
-                fetching={fetching}
+                fetching={initialFetching}
+                loadingMore={loadingMore}
+                hasMore={hasMorePosts}
+                onLoadMore={handleLoadMorePosts}
                 updatingId={updatingId}
                 deletingId={deletingId}
                 onDeletePost={handleDeleteRequest}
