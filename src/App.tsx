@@ -772,9 +772,10 @@ export default function App() {
         <div className="container mx-auto px-4 py-10">
           <div className="grid gap-6 lg:grid-cols-[1fr_minmax(0,450px)]">
             <div className="space-y-4 relative">
+              {/* No session */}
               {!session ? (
                 <Auth
-                  className="w-full sticky z-10 -top-5 rounded-3xl border bg-card p-6 shadow-lg transition-colors mx-auto lg:hidden"
+                  className="w-full sticky z-10 top-5 rounded-3xl border bg-card p-6 shadow-lg transition-colors mx-auto lg:hidden"
                   toggleTheme={toggleTheme}
                   theme={theme}
                 />
