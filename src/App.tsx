@@ -797,7 +797,7 @@ export default function App() {
               {/* No session */}
               {!session ? (
                 <Auth
-                  className="w-full sticky z-10 top-5 border bg-card p-6 shadow-lg transition-colors mx-auto lg:hidden"
+                  className="w-full sticky z-10 top-0 border bg-card p-6 shadow-lg transition-colors mx-auto lg:hidden"
                   toggleTheme={toggleTheme}
                   theme={theme}
                 />
