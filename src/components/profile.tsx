@@ -25,6 +25,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import type { ThemeMode } from "@/types/theme";
 import type { User } from "@/types/user";
+// import { formatCreatedAt } from "@/lib/utils";
 import {
   MAX_IMAGE_FILE_SIZE_BYTES,
   USERS_STORAGE_BUCKET,
@@ -41,6 +42,8 @@ interface ProfileProps {
   toggleTheme: () => void;
   theme: ThemeMode;
   session: Session | null;
+  currentUserPostCount: number;
+  currentUserLastPostAt: string | null;
 }
 
 const profileSchema = z.object({
@@ -50,7 +53,14 @@ const profileSchema = z.object({
   image_url: z.string().nullable().optional(),
 });
 
-export default function Profile({ className, toggleTheme, theme, session }: ProfileProps) {
+export default function Profile({
+  className,
+  toggleTheme,
+  theme,
+  session,
+  currentUserPostCount,
+  // currentUserLastPostAt,
+}: ProfileProps) {
   const [logouting, setLogouting] = useState(false);
   const [profile, setProfile] = useState<User | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
@@ -422,6 +432,9 @@ export default function Profile({ className, toggleTheme, theme, session }: Prof
         session?.user.email)) ?? "Profile";
   const displayBio = loadingProfile ? "Loading..." : (profile?.bio ?? "");
   const displayFallback = session?.user.email?.charAt(0).toUpperCase() ?? "?";
+  // const lastPostDisplay = currentUserLastPostAt
+  //   ? formatCreatedAt(currentUserLastPostAt)
+  //   : "No posts yet";
 
   const themeIcon = theme === "dark" ? <Sun className="size-5" /> : <MoonStar className="size-5" />;
   const themeLabel = theme === "dark" ? "Switch to light theme" : "Switch to dark theme";
@@ -444,11 +457,11 @@ export default function Profile({ className, toggleTheme, theme, session }: Prof
       </header>
       <Separator />
       <div className="p-4 flex flex-row items-center">
-        <Avatar className="h-15 w-15">
+        <Avatar className="h-18 w-18">
           <AvatarImage src={profileImageUrl ?? undefined} />
           <AvatarFallback className="font-bold text-3xl">{displayFallback}</AvatarFallback>
         </Avatar>
-        <div className="ml-4">
+        <div className="ml-4 space-y-1">
           <div className="flex flex-row items-center">
             <h3 className="text-lg font-medium text-card-foreground">{displayName}</h3>
             <Button
@@ -465,10 +478,21 @@ export default function Profile({ className, toggleTheme, theme, session }: Prof
             <Mail className="inline-block size-4 text-card-foreground/70" />
             <p className="ml-1 text-sm text-card-foreground/70">{session?.user.email}</p>
           </div>
-          <div className="flex flex-row items-center mt-2">
+          <div className="flex flex-row items-center">
             <p className="text-sm text-card-foreground/70">{displayBio}</p>
           </div>
         </div>
+      </div>
+
+      <Separator />
+      <div className="px-6 py-4 text-center">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground ">
+          Your Posts
+        </p>
+        <p className="mt-1 text-2xl font-semibold text-card-foreground">{currentUserPostCount}</p>
+        {/* <p className="mt-2 text-xs font-medium text-muted-foreground">
+            Last post: <span className="text-card-foreground/80">{lastPostDisplay}</span>
+          </p> */}
       </div>
 
       <Dialog open={editOpen} onOpenChange={handleEditDialogChange}>

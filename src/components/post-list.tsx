@@ -23,6 +23,7 @@ interface PostListProps {
   posts: Post[];
   session: Session | null;
   profiles: Record<string, User>;
+  postStatsByEmail: Record<string, { count: number; lastPostAt: string | null }>;
   fetching: boolean;
   updatingId: number | null;
   deletingId: number | null;
@@ -35,6 +36,7 @@ export default function PostList({
   posts,
   session,
   profiles,
+  postStatsByEmail,
   fetching,
   updatingId,
   deletingId,
@@ -67,18 +69,24 @@ export default function PostList({
         ) : (
           <ul className="space-y-4">
             {posts
-              .map((post) => (
-                <PostItem
-                  key={post.id}
-                  post={post}
-                  session={session}
-                  profile={profiles[post.email.trim().toLowerCase()] ?? null}
-                  onDelete={() => onDeletePost(post)}
-                  onEdit={onEditPost}
-                  isUpdating={updatingId === post.id}
-                  isDeleting={deletingId === post.id}
-                />
-              ))
+              .map((post) => {
+                const normalizedEmail = post.email.trim().toLowerCase();
+                const stats = postStatsByEmail[normalizedEmail] ?? null;
+                return (
+                  <PostItem
+                    key={post.id}
+                    post={post}
+                    session={session}
+                    profile={profiles[normalizedEmail] ?? null}
+                    postCount={stats?.count ?? 0}
+                    lastPostAt={stats?.lastPostAt ?? null}
+                    onDelete={() => onDeletePost(post)}
+                    onEdit={onEditPost}
+                    isUpdating={updatingId === post.id}
+                    isDeleting={deletingId === post.id}
+                  />
+                );
+              })
               .reverse()}
           </ul>
         )}

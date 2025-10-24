@@ -1,5 +1,5 @@
 // React
-import { type ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
+import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // UI Components
 import Auth from "./components/authenicate";
@@ -53,6 +53,11 @@ import { toast } from "sonner";
 // Theme Management
 const THEME_STORAGE_KEY = "theme-preference";
 
+type PostStats = {
+  count: number;
+  lastPostAt: string | null;
+};
+
 // Form Validation Schema
 const postSchema = z.object({
   title: z.string().min(1, "Title is required").max(100, "Title is too long"),
@@ -103,6 +108,75 @@ export default function App() {
 
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
+
+  const postStatsByEmail = useMemo(() => {
+    if (!posts.length) {
+      return {};
+    }
+
+    const stats: Record<string, PostStats> = {};
+
+    for (const post of posts) {
+      const postEmail = typeof post.email === "string" ? post.email.trim().toLowerCase() : null;
+      if (!postEmail) {
+        continue;
+      }
+
+      const createdAt = typeof post.created_at === "string" ? post.created_at : null;
+      const existing = stats[postEmail];
+
+      if (!existing) {
+        stats[postEmail] = {
+          count: 1,
+          lastPostAt: createdAt,
+        };
+        continue;
+      }
+
+      existing.count += 1;
+
+      if (createdAt) {
+        const previous = existing.lastPostAt;
+        if (!previous) {
+          existing.lastPostAt = createdAt;
+        } else {
+          const createdTime = Date.parse(createdAt);
+          const previousTime = Date.parse(previous);
+          if (!Number.isNaN(createdTime) && (Number.isNaN(previousTime) || createdTime > previousTime)) {
+            existing.lastPostAt = createdAt;
+          }
+        }
+      }
+    }
+
+    return stats;
+  }, [posts]);
+
+  const currentUserPostCount = useMemo(() => {
+    const normalizedEmail =
+      typeof session?.user?.email === "string"
+        ? session.user.email.trim().toLowerCase()
+        : null;
+
+    if (!normalizedEmail) {
+      return 0;
+    }
+
+    return postStatsByEmail[normalizedEmail]?.count ?? 0;
+  }, [postStatsByEmail, session?.user?.email]);
+
+  const currentUserLastPostAt = useMemo(() => {
+    const normalizedEmail =
+      typeof session?.user?.email === "string"
+        ? session.user.email.trim().toLowerCase()
+        : null;
+
+    if (!normalizedEmail) {
+      return null;
+    }
+
+    return postStatsByEmail[normalizedEmail]?.lastPostAt ?? null;
+  }, [postStatsByEmail, session?.user?.email]);
 
   const mergeProfiles = useCallback((users: User[] | null | undefined) => {
     if (!users?.length) {
@@ -646,6 +720,7 @@ export default function App() {
                 posts={posts}
                 session={session}
                 profiles={profilesByEmail}
+                postStatsByEmail={postStatsByEmail}
                 fetching={fetching}
                 updatingId={updatingId}
                 deletingId={deletingId}
@@ -662,6 +737,8 @@ export default function App() {
                     toggleTheme={toggleTheme}
                     theme={theme}
                     session={session}
+                    currentUserPostCount={currentUserPostCount}
+                    currentUserLastPostAt={currentUserLastPostAt}
                   />
                   <AddPost
                     className="mx-auto w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors"
@@ -729,6 +806,8 @@ export default function App() {
                 toggleTheme={toggleTheme}
                 theme={theme}
                 session={session}
+                currentUserPostCount={currentUserPostCount}
+                currentUserLastPostAt={currentUserLastPostAt}
               />
               <AddPost
                 className="mx-auto w-full max-w-md space-y-4 rounded-3xl border bg-card p-6 shadow-lg"

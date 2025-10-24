@@ -45,6 +45,8 @@ interface PostItemProps {
   post: Post;
   session: Session | null;
   profile: User | null;
+  postCount: number;
+  lastPostAt: string | null;
   onDelete?: (post: Post) => void;
   onEdit?: (post: Post) => void;
   isUpdating?: boolean;
@@ -55,6 +57,8 @@ export default function PostItem({
   post,
   session,
   profile,
+  postCount,
+  lastPostAt,
   onDelete,
   onEdit,
   isUpdating,
@@ -110,6 +114,8 @@ export default function PostItem({
   const displayEmail = profile?.email ?? post.email;
   const avatarFallback =
     (profile?.name || post.email)?.trim().charAt(0)?.toUpperCase() ?? post.email.charAt(0);
+  const postCountLabel = isAuthor ? "Your Posts" : "Posts";
+  const lastPostDisplay = lastPostAt ? formatCreatedAt(lastPostAt) : "—";
 
   return (
     <>
@@ -188,11 +194,15 @@ export default function PostItem({
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Last updated</p>
-                        <p className="text-sm text-card-foreground">
-                          {profile.updated_at ? formatCreatedAt(profile.updated_at) : "—"}
-                        </p>
+                        <p className="text-sm font-medium text-muted-foreground">Last post</p>
+                        <p className="text-sm text-card-foreground">{lastPostDisplay}</p>
                       </div>
+                    </div>
+                    <div className="rounded-2xl border bg-muted/20 p-4 text-center">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {postCountLabel}
+                      </p>
+                      <p className="mt-1 text-2xl font-semibold text-card-foreground">{postCount}</p>
                     </div>
                   </div>
                 ) : (
