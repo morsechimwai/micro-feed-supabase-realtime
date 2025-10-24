@@ -1078,7 +1078,7 @@ export default function App() {
         </DialogContent>
       </Dialog>
       {!session && authOverlayVisible ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/40 backdrop-blur-sm p-4">
           <Auth
             className="mx-auto w-full max-w-md rounded-3xl border bg-card p-6 shadow-lg transition-colors"
             toggleTheme={toggleTheme}
