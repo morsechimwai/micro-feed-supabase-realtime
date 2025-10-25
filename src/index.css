@@ -120,6 +120,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: "Nunito", "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     background-color: var(--pattern-base);
     background-image:
       radial-gradient(var(--pattern-dot) 1px, transparent 1px),
