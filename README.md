@@ -1,14 +1,14 @@
-# 🧞‍♂️ MicroFeed
+# 🧞‍♂️ microFeed
 
 <p align="center">
   <a href="https://micro-feed.vercel.app/">
-    <img src="public/micro-feed.png" alt="MicroFeed Logo" width="120" height="120">
+    <img src="public/micro-feed.png" alt="microFeed Logo" width="120" height="120">
   </a>
 </p>
 
-MicroFeed is an indie-friendly, open-source micropost platform for teams that want to broadcast short updates, visuals, and ideas in real time while retaining full custody of their data. Deploy it under your own Supabase project, tweak the UI, and ship an internal or community feed in a weekend.
+microFeed is an indie-friendly, open-source micropost platform for teams that want to broadcast short updates, visuals, and ideas in real time while retaining full custody of their data. Deploy it under your own Supabase project, tweak the UI, and ship an internal or community feed in a weekend.
 
-## Why product teams grab MicroFeed
+## Why product teams grab microFeed
 - **Post instantly** – compose, attach an image, and hit publish; every client receives the update through Supabase Realtime.
 - **Edit or retire gracefully** – update copy or swap images later; cache-busted URLs make sure nobody sees stale files.
 - **Rich author profiles** – every post renders the author’s name, bio, photo, and email by joining against the `users` table with realtime updates.
@@ -134,6 +134,6 @@ create policy "Authenticated delete posts"
 - Ready for add-ons: reactions, mentions, Slack/Teams relays, scheduled posts—wire them up via Supabase functions or serverless hooks.
 
 ## Contributing & license
-Pull requests, issues, and feature ideas are welcome. MicroFeed ships under the [MIT License](./LICENSE), so you can adapt it for commercial products, internal tools, or SaaS offerings without friction.
+Pull requests, issues, and feature ideas are welcome. microFeed ships under the [MIT License](./LICENSE), so you can adapt it for commercial products, internal tools, or SaaS offerings without friction.
 
 Own your feed. Let your team share updates on your terms.
