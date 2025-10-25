@@ -212,7 +212,7 @@ export default function Authenicate({ className, toggleTheme, theme }: Authenica
         </Button>
         <h2 className="flex items-center text-xl font-semibold text-card-foreground">
           <MessageCircleMore />
-          <span className="ml-2">MicroFeed</span>
+          <span className="ml-2">microFeed</span>
         </h2>
       </header>
       <div className="mt-4 space-y-2">

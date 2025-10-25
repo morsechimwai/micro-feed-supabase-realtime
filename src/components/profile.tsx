@@ -449,7 +449,7 @@ export default function Profile({
         </div>
         <h2 className="flex items-center text-xl font-semibold text-card-foreground">
           <MessageCircleMore />
-          <span className="ml-2">MicroFeed</span>
+          <span className="ml-2">microFeed</span>
         </h2>
       </header>
       <Separator />
