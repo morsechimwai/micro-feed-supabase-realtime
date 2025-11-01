@@ -1,4 +1,4 @@
-# 🧞‍♂️ microFeed
+# microFeed - A Supabase-Powered Micropost Platform
 
 <p align="center">
   <a href="https://micro-feed.vercel.app/">
