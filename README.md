@@ -1,12 +1,12 @@
-# microFeed - แพลตฟอร์ม Micropost ที่ขับเคลื่อนด้วย Supabase
+# microFeed
 
 <p align="center">
   <img src="public/micro-feed.png" alt="microFeed Logo" width="120" height="120">
 </p>
 
-microFeed เป็นแพลตฟอร์ม micropost แบบ open-source ที่เป็นมิตรกับ indie developer สำหรับทีมที่ต้องการแบ่งปัน updates สั้นๆ รูปภาพ และไอเดียแบบ real time พร้อมทั้งรักษาการควบคุมข้อมูลของตนเองอย่างเต็มที่ deploy ภายใต้ Supabase project ของคุณเอง ปรับแต่ง UI และเผยแพร่ internal หรือ community feed ได้ภายในสุดสบดาย
+microFeed คือแพลตฟอร์ม micropost แบบ open-source สำหรับทีมและ indie developers ที่ต้องการช่องทางแชร์อัปเดตสั้นๆ รูปภาพ ไอเดีย และสถานะงานแบบ real-time โดยยัง ถือสิทธิ์ข้อมูลเองทั้งหมด
 
-## เหตุใด product teams จึงเลือกใช้แพลตฟอร์มนี้
+## ทำไม product teams จึงเลือกใช้แพลตฟอร์มนี้
 - **โพสต์ได้ทันที** – เขียน แนบรูปภาพ (บังคับ) และเผยแพร่ ทุก client จะได้รับ update ผ่าน Supabase Realtime
 - **โปรไฟล์ผู้เขียนที่สมบูรณ์** – ทุกโพสต์จะแสดงชื่อ bio รูปภาพ และ email ของผู้เขียนโดยการ join กับตาราง `users` พร้อม realtime updates
 - **Dark & Light themes พร้อมใช้งาน** – การตั้งค่า theme ของผู้ใช้แต่ละคนจะถูกเก็บไว้ตลอดการใช้งาน
@@ -124,7 +124,7 @@ create policy "Authenticated delete posts"
   );
 ```
 
-## ปรับแต่งและขยายความสามารถ
+## Tech Stack & Extensibility
 - Tailwind CSS + shadcn/ui ทำให้การแก้ไข theming และ layout เป็นเรื่องง่าย
 - React Hook Form + Zod จัดการ validation คุณสามารถเพิ่ม field rules ของตนเองหรือขยาย schema ได้
 - พร้อมสำหรับ add-ons เช่น reactions, mentions, Slack/Teams relays, scheduled posts—เชื่อมต่อผ่าน Supabase functions หรือ serverless hooks
