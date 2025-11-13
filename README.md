@@ -1,31 +1,28 @@
-# microFeed - A Supabase-Powered Micropost Platform
+# microFeed - แพลตฟอร์ม Micropost ที่ขับเคลื่อนด้วย Supabase
 
 <p align="center">
-  <a href="https://micro-feed.vercel.app/">
-    <img src="public/micro-feed.png" alt="microFeed Logo" width="120" height="120">
-  </a>
+  <img src="public/micro-feed.png" alt="microFeed Logo" width="120" height="120">
 </p>
 
-microFeed is an indie-friendly, open-source micropost platform for teams that want to broadcast short updates, visuals, and ideas in real time while retaining full custody of their data. Deploy it under your own Supabase project, tweak the UI, and ship an internal or community feed in a weekend.
+microFeed เป็นแพลตฟอร์ม micropost แบบ open-source ที่เป็นมิตรกับ indie developer สำหรับทีมที่ต้องการแบ่งปัน updates สั้นๆ รูปภาพ และไอเดียแบบ real time พร้อมทั้งรักษาการควบคุมข้อมูลของตนเองอย่างเต็มที่ deploy ภายใต้ Supabase project ของคุณเอง ปรับแต่ง UI และเผยแพร่ internal หรือ community feed ได้ภายในสุดสบดาย
 
-## Why product teams grab microFeed
-- **Post instantly** – compose, attach an image, and hit publish; every client receives the update through Supabase Realtime.
-- **Edit or retire gracefully** – update copy or swap images later; cache-busted URLs make sure nobody sees stale files.
-- **Rich author profiles** – every post renders the author’s name, bio, photo, and email by joining against the `users` table with realtime updates.
-- **Dark & light themes out of the box** – per-user theme preferences persist across sessions.
-- **Mobile-first feed** – full-screen timeline with a floating "New Post" button that opens a dialog on phones.
-- **Auth that respects roles** – Supabase Auth gates creation, edits, and deletions to signed-in members.
+## เหตุใด product teams จึงเลือกใช้แพลตฟอร์มนี้
+- **โพสต์ได้ทันที** – เขียน แนบรูปภาพ (บังคับ) และเผยแพร่ ทุก client จะได้รับ update ผ่าน Supabase Realtime
+- **โปรไฟล์ผู้เขียนที่สมบูรณ์** – ทุกโพสต์จะแสดงชื่อ bio รูปภาพ และ email ของผู้เขียนโดยการ join กับตาราง `users` พร้อม realtime updates
+- **Dark & Light themes พร้อมใช้งาน** – การตั้งค่า theme ของผู้ใช้แต่ละคนจะถูกเก็บไว้ตลอดการใช้งาน
+- **Mobile-first feed** – timeline แบบเต็มจอพร้อม floating button "New Post" ที่เปิด dialog บนมือถือ
+- **Authentication ที่เคารพ roles** – Supabase Auth ป้องกันการสร้าง และการลบให้เฉพาะสมาชิกที่ sign-in แล้วเท่านั้น
 
-## Data ownership & compliance (PDPA-ready)
-- **You control the stack** – all posts and assets live in your Supabase project; no third-party data brokers involved.
-- **Private storage buckets** – images sit in a dedicated bucket with configurable Row-Level Security policies.
-- **Right-to-erasure ready** – removing a post cascades into deleting its attachment, satisfying PDPA/GDPR deletion requests.
-- **Auditability** – because Supabase logs every change, you can trace who published or modified content.
+## การเป็นเจ้าของข้อมูล & การปฏิบัติตามกฎหมาย (PDPA-ready)
+- **คุณควบคุม stack ได้เอง** – โพสต์และ assets ทั้งหมดอยู่ใน Supabase project ของคุณ ไม่มี third-party data brokers เข้ามาเกี่ยวข้อง
+- **Private storage buckets** – รูปภาพจัดเก็บใน bucket เฉพาะพร้อม Row-Level Security policies ที่ปรับแต่งได้
+- **พร้อมสำหรับสิทธิในการลบข้อมูล** – การลบโพสต์จะลบไฟล์แนบด้วย เพื่อตอบสนองข้อกำหนด PDPA/GDPR
+- **ตรวจสอบได้** – เนื่องจาก Supabase บันทึกการเปลี่ยนแปลงทุกครั้ง คุณสามารถติดตามได้ว่าใครเผยแพร่หรือแก้ไขเนื้อหา
 
-## Quick start
-1. Fork or clone the repository.
-2. Spin up a Supabase project (enable Auth + Storage).
-3. Provision the tables and storage buckets:
+## เริ่มต้นใช้งานอย่างรวดเร็ว
+1. Fork หรือ clone repository นี้
+2. สร้าง Supabase project (เปิดใช้งาน Auth + Storage)
+3. สร้างตารางและ storage buckets:
    ```sql
    create table public.users (
      id bigint generated by default as identity primary key,
@@ -46,22 +43,21 @@ microFeed is an indie-friendly, open-source micropost platform for teams that wa
      description text,
      email text not null,
      image_url text,
-     created_at timestamptz not null default timezone('utc', now()),
-     updated_at timestamptz default timezone('utc', now())
+     created_at timestamptz not null default timezone('utc', now())
    );
    ```
-   Create two private storage buckets: `posts-images` and `users-images`.
-4. Set environment variables such as `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY`.
-5. Install dependencies and run locally:
+   สร้าง private storage buckets สองอัน: `posts-images` และ `users-images`
+4. ตั้งค่า environment variables เช่น `VITE_SUPABASE_URL` และ `VITE_SUPABASE_KEY`
+5. ติดตั้ง dependencies และรันในเครื่อง:
    ```bash
    npm install
    npm run dev
    ```
 
-> Prefer a one-click path? Use Supabase or Vercel deploy buttons to bootstrap your instance with minimal setup.
+> **หมายเหตุ:** แพลตฟอร์มนี้กำหนดให้โพสต์ทุกโพสต์ต้องมีรูปภาพประกอบ การสร้างโพสต์ใหม่โดยไม่มีรูปภาพจะไม่สามารถดำเนินการได้
 
 ## Database & Storage RLS
-Turn on Row-Level Security so only authenticated members can create and maintain their own microposts and media.
+เปิดใช้งาน Row-Level Security เพื่อให้เฉพาะสมาชิกที่ authenticated แล้วเท่านั้นที่สามารถสร้างและจัดการ microposts และ media ของตนเองได้
 
 ```sql
 -- USERS
@@ -128,12 +124,26 @@ create policy "Authenticated delete posts"
   );
 ```
 
-## Customize & extend
-- Tailwind CSS + shadcn/ui make theming and layout changes straightforward.
-- React Hook Form + Zod handle validation; drop in your own field rules or extend the schema.
-- Ready for add-ons: reactions, mentions, Slack/Teams relays, scheduled posts—wire them up via Supabase functions or serverless hooks.
+## ปรับแต่งและขยายความสามารถ
+- Tailwind CSS + shadcn/ui ทำให้การแก้ไข theming และ layout เป็นเรื่องง่าย
+- React Hook Form + Zod จัดการ validation คุณสามารถเพิ่ม field rules ของตนเองหรือขยาย schema ได้
+- พร้อมสำหรับ add-ons เช่น reactions, mentions, Slack/Teams relays, scheduled posts—เชื่อมต่อผ่าน Supabase functions หรือ serverless hooks
 
-## Contributing & license
-Pull requests, issues, and feature ideas are welcome. microFeed ships under the [MIT License](./LICENSE), so you can adapt it for commercial products, internal tools, or SaaS offerings without friction.
+## Contributing
 
-Own your feed. Let your team share updates on your terms.
+ผมยังต้องฝึกอีกเยอะ และโปรเจคนี้ก็ยังมีช่องว่างให้พัฒนาอีกมากครับ
+หากคุณพบเห็นส่วนไหนที่สามารถปรับปรุงให้ดีขึ้นได้ — ไม่ว่าจะเล็กหรือใหญ่ — ยินดีรับทุกความช่วยเหลือจากทุก ๆ ท่านเลยครับ 🙏
+
+ขั้นตอนร่วมสนับสนุน:
+
+1. Fork repo นี้ไปที่ของคุณ
+2. สร้าง branch สำหรับส่วนที่คุณอยากปรับปรุง
+3. ลงมือเขียนโค้ด หรือเพิ่มเทสท์ หากจำเป็น
+4. ส่ง Pull Request พร้อมเล่าว่าคุณปรับปรุงอะไร อย่างไรบ้าง และทำไมถึงสำคัญ
+
+ทุกการมีส่วนร่วม ทั้งโค้ด ไอเดีย หรือ feedback ช่วยให้โปรเจคนี้เติบโตเร็วขึ้นมากครับ
+ขอบคุณที่มาช่วยกันสร้างสิ่งนี้ให้ดีขึ้นไปด้วยกันครับ 🩵
+
+---
+
+**🧑‍💻 Happy Hacking!**
